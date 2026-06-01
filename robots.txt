@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://bank-analizer-beta.vercel.app/sitemap.xml

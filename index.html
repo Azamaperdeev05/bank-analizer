@@ -1,0 +1,633 @@
+<!doctype html>
+<html lang="kk">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Primary SEO: Title (multilingual keywords) -->
+    <title>Қазақстан банктерінің PDF үзінді көшірмелерін талдау орталығы | Анализ банковских выписок Казахстана</title>
+
+    <!-- Meta Tags -->
+    <meta name="description" content="Қазақстандық банктердің (Kaspi, Halyk, Forte, Jusan, BCC) PDF үзінді көшірмелерін талдауға және қаржылық бақылауға арналған қауіпсіз, 100% клиенттік веб-қосымша.">
+    <meta name="keywords" content="выписка талдау, Kaspi Gold, Halyk Bank, ForteBank, Jusan Bank, BCC, ЦентрКредит, PDF талдау, қаржылық талдау, анализ выписки, расходы, кіріс, шығыс, budget tracker Kazakhstan">
+    <meta name="author" content="Bank Statement Analyzer">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#090B0E">
+    <meta name="google-site-verification" content="google6b11bbffd33748dd">
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://bank-analizer-beta.vercel.app/">
+
+    <!-- Open Graph / Facebook / Telegram / WhatsApp -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://bank-analizer-beta.vercel.app/">
+    <meta property="og:title" content="Қазақстан банктерінің PDF үзінді көшірмелерін талдау орталығы | Анализ банковских выписок Казахстана">
+    <meta property="og:description" content="Қазақстандық банктердің (Kaspi, Halyk, Forte, Jusan, BCC) PDF үзінді көшірмелерін талдауға және қаржылық бақылауға арналған қауіпсіз, 100% клиенттік веб-қосымша.">
+    <meta property="og:image" content="https://companieslogo.com/img/orig/H4L1.F-f93d8450.png?t=1746946303">
+    <meta property="og:site_name" content="Statement Analyzer">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://bank-analizer-beta.vercel.app/">
+    <meta property="twitter:title" content="Қазақстан банктерінің PDF үзінді көшірмелерін талдау орталығы | Анализ банковских выписок Казахстана">
+    <meta property="twitter:description" content="Қазақстандық банктердің (Kaspi, Halyk, Forte, Jusan, BCC) PDF үзінді көшірмелерін талдауға және қаржылық бақылауға арналған қауіпсіз, 100% клиенттік веб-қосымша.">
+    <meta property="twitter:image" content="https://companieslogo.com/img/orig/H4L1.F-f93d8450.png?t=1746946303">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="./styles.css">
+
+    <!-- Structured Data: WebApplication (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Unified Bank Statement Analyzer",
+      "alternateName": ["Қазақстан банктерінің PDF үзінді көшірмелерін талдау орталығы", "Анализатор банковских выписок Казахстана"],
+      "url": "https://bank-analizer-beta.vercel.app/",
+      "description": "Unified secure client-side browser application to parse and analyze PDF bank statements from Kaspi, Halyk, Forte, Jusan, and BCC.",
+      "applicationCategory": "FinanceApplication",
+      "operatingSystem": "Any",
+      "browserRequirements": "Requires a modern web browser",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "KZT"
+      },
+      "inLanguage": ["kk", "ru", "en"],
+      "isAccessibleForFree": true
+    }
+    </script>
+  </head>
+  <body class="theme-default">
+    
+    <!-- GORGEOUS FINTECH SPLASH / SELECTION SCREEN -->
+    <section class="splash-screen" id="splashScreen">
+      <!-- Background elements inside splash -->
+      <svg class="orbital-arcs-splash" viewBox="0 0 1400 600" fill="none" preserveAspectRatio="none" aria-hidden="true">
+        <path d="M-100,280 Q700,50 1500,450" stroke="rgba(255, 255, 255, 0.08)" stroke-width="1.2" stroke-dasharray="4 4" />
+        <path d="M200,-50 Q700,380 1200,100" stroke="rgba(255, 255, 255, 0.06)" stroke-width="1" />
+      </svg>
+
+      <div class="splash-container">
+        <header class="splash-header">
+          <div class="splash-logo">A</div>
+          <h1>Statement Analyzer</h1>
+          <p class="splash-subtitle">Қауіпсіз және 100% клиенттік талдау хабы. Төмендегі банктердің бірін таңдаңыз немесе тікелей PDF үзінді көшірмесін осында сүйреңіз.</p>
+        </header>
+
+        <!-- Splash Bank Grid Selection -->
+        <div class="splash-grid" id="bankSplashGrid">
+          <button class="splash-card kaspi" type="button" data-bank="kaspi">
+            <div class="card-glow"></div>
+            <div class="brand-mark">
+              <img src="https://upload.wikimedia.org/wikipedia/kk/thumb/a/aa/Logo_of_Kaspi_bank.png/1280px-Logo_of_Kaspi_bank.png" alt="Kaspi Bank">
+            </div>
+            <h3>Kaspi Bank</h3>
+            <span class="brand-desc">Kaspi Gold & Red</span>
+          </button>
+
+          <button class="splash-card halyk" type="button" data-bank="halyk">
+            <div class="card-glow"></div>
+            <div class="brand-mark">
+              <img src="https://companieslogo.com/img/orig/H4L1.F-f93d8450.png?t=1746946303" alt="Halyk Bank">
+            </div>
+            <h3>Halyk Bank</h3>
+            <span class="brand-desc">Халық / Народный</span>
+          </button>
+
+          <button class="splash-card forte" type="button" data-bank="forte">
+            <div class="card-glow"></div>
+            <div class="brand-mark">
+              <img src="https://main.storage-object.pscloud.io/Group_2087330520_1_ba6eecfc23.svg" alt="ForteBank">
+            </div>
+            <h3>ForteBank</h3>
+            <span class="brand-desc">Форте Банк</span>
+          </button>
+
+          <button class="splash-card jusan" type="button" data-bank="jusan">
+            <div class="card-glow"></div>
+            <div class="brand-mark">
+              <img src="https://play-lh.googleusercontent.com/HdMEN9YZsSrYUGtzjz3XPEOzAj6tERw0sDhpiAa3gpliOLbIwMK9uwJtPxxrtPo8Cw" alt="Alatau City Bank">
+            </div>
+            <h3>Alatau City Bank</h3>
+            <span class="brand-desc">Алатау Сити Банк (Jusan)</span>
+          </button>
+
+          <button class="splash-card bcc" type="button" data-bank="bcc">
+            <div class="card-glow"></div>
+            <div class="brand-mark">
+              <img src="https://cdn.worldvectorlogo.com/logos/bcc-bank.svg" alt="CenterCredit">
+            </div>
+            <h3>CenterCredit</h3>
+            <span class="brand-desc">БЦК / BCC</span>
+          </button>
+        </div>
+
+        <!-- Magic Dropzone for Auto-Detection -->
+        <label class="splash-drop-zone" id="splashDropZone" for="splashFileInput">
+          <input id="splashFileInput" type="file" accept="application/pdf" multiple style="display: none;">
+          <svg viewBox="0 0 24 24" aria-hidden="true" style="width: 44px; height: 44px; fill: none; stroke: currentColor; stroke-width: 1.5; margin-bottom: 12px; color: var(--text-muted);">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"></path>
+          </svg>
+          <strong>Автоматты тану үшін PDF файлды сүйреңіз</strong>
+          <span>Немесе файлды таңдау үшін басыңыз</span>
+          <small>кез келген қолдау көрсетілетін банктің үзінді көшірмесі</small>
+        </label>
+
+        <p class="splash-privacy-note">🔒 Барлық өңдеу жұмыстары браузерде толығымен оффлайн өтеді. PDF файлдарыңыз ешқандай серверге жіберілмейді.</p>
+        
+        <footer class="splash-footer">
+          <p>© 2026 Азамат Пердеев. Барлық құқықтар қорғалған. GNU GPL v3 лицензиясы бойынша таратылады.</p>
+          <p>
+            Репозиторий: <a href="https://github.com/Azamaperdeev05/bank-analizer" target="_blank" rel="noopener noreferrer">Azamaperdeev05/bank-analizer</a> | 
+            ☕ <a href="https://donat-woad.vercel.app/" target="_blank" rel="noopener noreferrer" class="donate-splash-link">Жобаны қолдау (Донат)</a>
+          </p>
+          <p style="margin-top: 6px; font-style: italic; opacity: 0.8;">
+            💬 "Talk is cheap. Show me the code." — Linus Torvalds (вариациясы: "Talk is cheap, send patches.")
+          </p>
+        </footer>
+      </div>
+    </section>
+
+    <!-- CORE WEB APP INTERFACE (HIDDEN AT START) -->
+    <header class="app-header hidden" id="appHeader">
+      <div class="header-brand-container">
+        <button class="header-back-button" id="backToHubButton" type="button" title="Хабқа оралу">
+          <svg viewBox="0 0 24 24" aria-hidden="true" style="width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.5;">
+            <path d="M19 12H5M12 19l-7-7 7-7"></path>
+          </svg>
+        </button>
+        <div class="brand-mark" id="appHeaderBrandMark" aria-hidden="true">
+          <img id="appHeaderBrandMarkImg" src="" alt="Bank Logo" style="display: none; width: 100%; height: 100%; object-fit: contain; border-radius: inherit;">
+          <span id="appHeaderBrandMarkText">A</span>
+        </div>
+        <h1 id="appHeaderTitle">PDF талдау</h1>
+        
+        <!-- Header Bank Quick Switcher -->
+        <div class="header-switcher-wrap">
+          <select class="header-bank-switcher" id="headerBankSwitcher">
+            <option value="kaspi">Kaspi Bank</option>
+            <option value="halyk">Halyk Bank</option>
+            <option value="forte">ForteBank</option>
+            <option value="jusan">Alatau City Bank</option>
+            <option value="bcc">Bank CenterCredit</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <a href="https://donat-woad.vercel.app/" target="_blank" rel="noopener noreferrer" class="ghost-button donate-btn-header" title="Жобаны қолдау (Донат)">
+          <svg viewBox="0 0 24 24" aria-hidden="true" style="width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2;">
+            <path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z M6 1v3 M10 1v3 M14 1v3" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+          <span class="btn-text">Донат</span>
+        </a>
+        <button class="ghost-button" id="clearButton" type="button" title="Деректі тазарту">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M3 6h18M8 6V4h8v2M9 10v8M15 10v8M5 6l1 15h12l1-15"></path>
+          </svg>
+          <span class="btn-text">Тазарту</span>
+        </button>
+        <button class="ghost-button" id="reportButton" type="button" title="HTML есеп">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6M10 9h1"></path>
+          </svg>
+          <span class="btn-text">Есеп</span>
+        </button>
+
+      </div>
+    </header>
+
+    <main class="app-shell hidden" id="appShell">
+      <aside class="upload-panel">
+        <section class="panel">
+          <h2>PDF жүктеу</h2>
+          <label class="drop-zone" id="dropZone" for="fileInput">
+            <input id="fileInput" type="file" accept="application/pdf" multiple>
+            <svg viewBox="0 0 24 24" aria-hidden="true" style="width: 48px; height: 48px; fill: none; stroke: currentColor; stroke-width: 1.5; margin-bottom: 12px; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.15));">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"></path>
+            </svg>
+            <span>PDF файлын осы жерге сүйреңіз</span>
+            <strong>Файлды таңдау</strong>
+            <small id="dropZoneBankName">PDF үзінді көшірмесі</small>
+          </label>
+        </section>
+
+        <section class="panel file-panel collapsible-panel collapsed" id="filePanel">
+          <div class="panel-toggle-header" id="filePanelHeader">
+            <h2>Файл ақпараты</h2>
+            <svg class="chevron-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </svg>
+          </div>
+          <div class="panel-content">
+            <dl class="file-meta">
+              <div>
+                <dt>Файл</dt>
+                <dd id="fileName">Файл таңдалмады</dd>
+              </div>
+              <div>
+                <dt>Шот</dt>
+                <dd id="accountId">-</dd>
+              </div>
+              <div>
+                <dt>Карта</dt>
+                <dd id="cardTitle">-</dd>
+              </div>
+              <div>
+                <dt>Кезең</dt>
+                <dd id="periodText">-</dd>
+              </div>
+              <div>
+                <dt>Транзакциялар</dt>
+                <dd id="transactionCountSide">0</dd>
+              </div>
+            </dl>
+            <p class="status-line" id="statusLine">PDF жүктеңіз</p>
+          </div>
+        </section>
+
+        <section class="panel settings-panel collapsible-panel collapsed" id="settingsPanel">
+          <div class="panel-toggle-header" id="settingsPanelHeader">
+            <h2>Қаржы баптауы</h2>
+            <svg class="chevron-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </svg>
+          </div>
+          <div class="panel-content">
+            <label class="toggle-control">
+              <input id="privacyToggle" type="checkbox">
+              <span>Құпия режим</span>
+            </label>
+            <label class="toggle-control">
+              <input id="excludeInternalToggle" type="checkbox">
+              <span>Ішкі қозғалысты алып тастау</span>
+            </label>
+            <label class="field-stack">
+              <span>Ірі транзакция шегі</span>
+              <input id="largeAmountInput" type="number" min="0" step="1000" value="50000">
+            </label>
+            <label class="field-stack">
+              <span>Айлық кіріс жоспары</span>
+              <input id="incomePlanInput" type="number" min="0" step="10000" value="0">
+            </label>
+            <div class="inline-form">
+              <label class="field-stack">
+                <span>Бюджет категориясы</span>
+                <select id="budgetCategory"></select>
+              </label>
+              <label class="field-stack">
+                <span>Айлық лимит</span>
+                <input id="budgetAmount" type="number" min="0" step="1000" placeholder="0">
+              </label>
+              <button class="ghost-button compact-button" id="saveBudgetButton" type="button">Сақтау</button>
+            </div>
+            <div class="inline-form">
+              <label class="field-stack">
+                <span>Мақсат атауы</span>
+                <input id="goalName" type="text" placeholder="Мысалы: қор жинау">
+              </label>
+              <label class="field-stack">
+                <span>Мақсат сомасы</span>
+                <input id="goalTarget" type="number" min="0" step="10000" placeholder="0">
+              </label>
+              <label class="field-stack">
+                <span>Жиналды</span>
+                <input id="goalSaved" type="number" min="0" step="10000" placeholder="0">
+              </label>
+              <button class="ghost-button compact-button" id="addGoalButton" type="button">Қосу</button>
+            </div>
+          </div>
+        </section>
+      </aside>
+
+      <section class="content-area">
+        <!-- Watermark Background Text -->
+        <div class="ghost-watermark-bg" id="ghostWatermark" aria-hidden="true">ZEN</div>
+
+        <!-- Custom Brand Dynamic Orbital Arcs -->
+        <svg class="orbital-arcs" viewBox="0 0 1000 350" fill="none" preserveAspectRatio="none" aria-hidden="true">
+          <path d="M-100,180 Q350,30 900,300" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 4" class="orbit-dashed" opacity="0.6"/>
+          <path d="M150,-40 Q650,220 1150,90" stroke="currentColor" stroke-width="1.2" class="orbit-solid" opacity="0.4"/>
+        </svg>
+
+        <section class="filter-strip" aria-label="Талдау сүзгілері">
+          <label>
+            <span>Период</span>
+            <select id="periodFilter">
+              <option value="all">Барлық кезең</option>
+              <option value="30">Соңғы 30 күн</option>
+              <option value="90">Соңғы 90 күн</option>
+              <option value="365">Соңғы 1 жыл</option>
+            </select>
+          </label>
+          <label>
+            <span>Уақыт тобы</span>
+            <select id="timeGroup">
+              <option value="auto">Авто</option>
+              <option value="day">Күн бойынша</option>
+              <option value="month">Ай бойынша</option>
+            </select>
+          </label>
+          <label>
+            <span>Күн таңдау</span>
+            <input id="dayFilter" type="date">
+          </label>
+          <button class="ghost-button compact-button" id="clearDayButton" type="button">Күнді тазарту</button>
+          <p class="filter-note" id="activeFilterNote">Файл жүктелмеді</p>
+        </section>
+
+        <section class="metrics-grid" aria-label="Негізгі көрсеткіштер">
+          <article class="metric-card">
+            <div>
+              <span>Баланс өзгерісі</span>
+              <strong id="balanceChange">0,00 ₸</strong>
+            </div>
+            <small id="balanceRange">Файл жүктелмеді</small>
+          </article>
+          <article class="metric-card">
+            <div>
+              <span>Кіріс</span>
+              <strong class="positive" id="incomeTotal">0,00 ₸</strong>
+            </div>
+            <small id="incomeCount">0 операция</small>
+          </article>
+          <article class="metric-card">
+            <div>
+              <span>Шығыс</span>
+              <strong class="negative" id="expenseTotal">0,00 ₸</strong>
+            </div>
+            <small id="expenseCount">0 операция</small>
+          </article>
+          <article class="metric-card">
+            <div>
+              <span>Аударым</span>
+              <strong class="warning" id="transferTotal">0,00 ₸</strong>
+            </div>
+            <small id="transferCount">0 операция</small>
+          </article>
+          <article class="metric-card">
+            <div>
+              <span>Сатып алу</span>
+              <strong id="purchaseTotal">0,00 ₸</strong>
+            </div>
+            <small id="purchaseCount">0 операция</small>
+          </article>
+          <article class="metric-card">
+            <div>
+              <span>Нақты шығын</span>
+              <strong class="negative" id="realExpenseTotal">0,00 ₸</strong>
+            </div>
+            <small id="realExpenseMeta">Ішкі қозғалыссыз</small>
+          </article>
+          <article class="metric-card">
+            <div>
+              <span>Күндік орташа</span>
+              <strong id="dailyAverageExpense">0,00 ₸</strong>
+            </div>
+            <small id="dailyAverageMeta">Шығын күндері бойынша</small>
+          </article>
+          <article class="metric-card">
+            <div>
+              <span>Қауіпсіз күндік лимит</span>
+              <strong id="safeDailyLimit">0,00 ₸</strong>
+            </div>
+            <small id="safeDailyMeta">Ай соңына дейін</small>
+          </article>
+        </section>
+
+        <section class="analysis-grid">
+          <article class="panel chart-panel">
+            <div class="section-heading">
+              <h2>Операция түрлері</h2>
+              <span>Сома, ₸</span>
+            </div>
+            <div class="bars" id="operationBars"></div>
+          </article>
+
+          <article class="panel chart-panel">
+            <div class="section-heading">
+              <h2>Күндік ақша ағымы</h2>
+              <span>Кіріс / шығыс / таза</span>
+            </div>
+            <canvas id="dailyChart" width="720" height="340"></canvas>
+          </article>
+
+          <article class="panel top-panel">
+            <div class="section-heading">
+              <h2>Ең көп шығыс</h2>
+              <span>Сипаттама бойынша</span>
+            </div>
+            <ol class="top-list" id="topList"></ol>
+          </article>
+
+          <article class="panel top-panel">
+            <div class="section-heading">
+              <h2>Кімнен түсті</h2>
+              <span>Кіріс бойынша</span>
+            </div>
+            <ol class="top-list" id="incomePeopleList"></ol>
+          </article>
+
+          <article class="panel top-panel">
+            <div class="section-heading">
+              <h2>Адамдар бойынша</h2>
+              <span>Кіріс / шығыс / таза</span>
+            </div>
+            <ol class="people-list" id="peopleList"></ol>
+          </article>
+
+          <article class="panel top-panel">
+            <div class="section-heading">
+              <h2>Күндер мен айлар</h2>
+              <span id="timeBreakdownLabel">Авто</span>
+            </div>
+            <ol class="period-list" id="periodList"></ol>
+          </article>
+
+          <article class="panel calendar-panel">
+            <div class="section-heading">
+              <h2>Күнтізбе</h2>
+              <span>Күнді басып таңдаңыз</span>
+            </div>
+            <div class="calendar-heatmap" id="calendarHeatmap"></div>
+          </article>
+
+          <article class="panel top-panel">
+            <div class="section-heading">
+              <h2>Таңдалған күн</h2>
+              <span id="dayDetailLabel">Күн таңдалмады</span>
+            </div>
+            <div class="day-detail" id="dayDetail"></div>
+          </article>
+
+          <article class="panel top-panel collapsible-panel collapsed">
+            <div class="section-heading panel-toggle-header">
+              <h2>Бюджет лимиттері</h2>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span id="budgetMonthLabel">Ай</span>
+                <svg class="chevron-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+              </div>
+            </div>
+            <div class="panel-content">
+              <ol class="budget-list" id="budgetList"></ol>
+            </div>
+          </article>
+
+          <article class="panel top-panel collapsible-panel collapsed">
+            <div class="section-heading panel-toggle-header">
+              <h2>Мақсаттар</h2>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span>Жергілікті</span>
+                <svg class="chevron-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+              </div>
+            </div>
+            <div class="panel-content">
+              <ol class="goal-list" id="goalList"></ol>
+            </div>
+          </article>
+
+
+          <article class="panel top-panel collapsible-panel collapsed">
+            <div class="section-heading panel-toggle-header">
+              <h2>Ірі транзакциялар</h2>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span id="largeTransactionLabel">Шектеу</span>
+                <svg class="chevron-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+              </div>
+            </div>
+            <div class="panel-content">
+              <ol class="top-list" id="largeTransactionList"></ol>
+            </div>
+          </article>
+
+          <article class="panel top-panel collapsible-panel collapsed">
+            <div class="section-heading panel-toggle-header">
+              <h2>Қайталанатын төлемдер</h2>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span>Айлық</span>
+                <svg class="chevron-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+              </div>
+            </div>
+            <div class="panel-content">
+              <ol class="top-list" id="recurringList"></ol>
+            </div>
+          </article>
+
+          <article class="panel top-panel collapsible-panel collapsed">
+            <div class="section-heading panel-toggle-header">
+              <h2>Күмәнді күндер</h2>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span>Шығын</span>
+                <svg class="chevron-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+              </div>
+            </div>
+            <div class="panel-content">
+              <ol class="period-list" id="unusualDaysList"></ol>
+            </div>
+          </article>
+
+          <article class="panel top-panel collapsible-panel collapsed">
+            <div class="section-heading panel-toggle-header">
+              <h2>Апта күндері</h2>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span>Орташа</span>
+                <svg class="chevron-icon" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                </svg>
+              </div>
+            </div>
+            <div class="panel-content">
+              <ol class="period-list" id="weekdayList"></ol>
+            </div>
+          </article>
+        </section>
+
+        <section class="panel table-panel">
+          <div class="table-header">
+            <h2>Транзакциялар тізімі</h2>
+            <div class="table-tools">
+              <label class="search-box">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="m21 21-4.5-4.5M10.5 18a7.5 7.5 0 1 1 0-15 7.5 7.5 0 0 1 0 15Z"></path>
+                </svg>
+                <input id="searchInput" type="search" placeholder="Сипаттама бойынша іздеу">
+              </label>
+              <select id="typeFilter" aria-label="Операция түрі">
+                <option value="all">Барлығы</option>
+                <option value="purchase">Сатып алу</option>
+                <option value="transfer">Аударым</option>
+                <option value="income">Кіріс</option>
+                <option value="cash">Қолма-қол</option>
+              </select>
+              <button class="ghost-button" id="exportButton" type="button" title="CSV экспорт">
+                <svg viewBox="0 0 24 24" aria-hidden="true" style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.5; margin-right: 4px;">
+                  <path d="M12 3v12M7 10l5 5 5-5M5 21h14"></path>
+                </svg>
+                CSV
+              </button>
+              <button class="ghost-button" id="exportExcelButton" type="button" title="Excel (XLSX) экспорт">
+                <svg viewBox="0 0 24 24" aria-hidden="true" style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.5; margin-right: 4px;">
+                  <path d="M14 3v4a1 1 0 0 0 1 1h4 M14 17H4V3h10v5h5v9H14z"></path>
+                </svg>
+                Excel
+              </button>
+              <button class="ghost-button" id="exportWordButton" type="button" title="Word (DOCX) экспорт">
+                <svg viewBox="0 0 24 24" aria-hidden="true" style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.5; margin-right: 4px;">
+                  <path d="M14 3v4a1 1 0 0 0 1 1h4 M14 17H4V3h10v5h5v9H14z"></path>
+                </svg>
+                Word
+              </button>
+              <button class="ghost-button" id="exportPdfButton" type="button" title="PDF есеп экспорт">
+                <svg viewBox="0 0 24 24" aria-hidden="true" style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.5; margin-right: 4px;">
+                  <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6 M18 9h1.5a2.5 2.5 0 0 0 0-5H18 M12 4v5M12 4L9 7M12 4l3 7"></path>
+                </svg>
+                PDF
+              </button>
+              <button class="ghost-button" id="exportJsonButton" type="button" title="JSON экспорт">
+                <svg viewBox="0 0 24 24" aria-hidden="true" style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.5; margin-right: 4px;">
+                  <path d="M6 3h12v18H6zM9 8h6M9 12h6M9 16h3"></path>
+                </svg>
+                JSON
+              </button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Күні</th>
+                  <th>Түрі</th>
+                  <th>Сипаттама</th>
+                  <th>Сома</th>
+                  <th>Категория</th>
+                  <th>Жазба</th>
+                </tr>
+              </thead>
+              <tbody id="transactionTable"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
