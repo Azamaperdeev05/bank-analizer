@@ -946,6 +946,37 @@ canvas {
 
 .list-value {
   font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Two-level list item layout (recurring payments, etc.) */
+.list-main-col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.list-main-col .list-title {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.list-amount-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.list-subtitle {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 400;
 }
 
 /* Heatmap Calendar Calendar */
@@ -1165,6 +1196,7 @@ tr:hover td {
 
 .amount-col {
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .amount-col.positive {
@@ -1256,30 +1288,136 @@ tr:hover td {
   }
 }
 
+/* === EMPTY STATE AND CONDITIONAL VISIBILITY === */
+.app-shell.has-no-transactions .content-area {
+  display: none !important;
+}
+
+.app-shell.has-no-transactions .upload-panel .panel:not(:first-child) {
+  display: none !important;
+}
+
+/* === DESKTOP OVERRIDE FOR FILTER PANEL === */
+@media (min-width: 768px) {
+  #filterPanel.collapsible-panel.collapsed .panel-content {
+    display: block !important;
+  }
+  #filterPanel .chevron-icon {
+    display: none !important;
+  }
+  #filterPanel .panel-toggle-header {
+    display: none !important;
+  }
+  #filterPanel .filter-strip {
+    margin-top: 0 !important;
+  }
+}
+
+/* === TABLE ACTION BUTTONS === */
+.table-title-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.mobile-table-actions {
+  display: none;
+  gap: 8px;
+}
+
+.mobile-only-btn {
+  padding: 6px 12px !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 /* === MOBILE RESPONSIBILITY === */
 
 @media (max-width: 991px) {
   .app-shell {
     grid-template-columns: 1fr;
+    gap: 20px;
   }
 }
 
 @media (max-width: 767px) {
   .app-header {
-    height: auto;
-    padding: 12px 16px;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
+    height: 64px !important;
+    padding: 0 16px !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 0 !important;
   }
-  
+
+  .header-brand-container {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    flex-grow: 1 !important;
+  }
+
+  .header-switcher-wrap {
+    display: none !important; /* Hide quick switch dropdown on mobile */
+  }
+
+  #appHeaderTitle {
+    font-size: 1.05rem !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 180px !important;
+    margin: 0 !important;
+    text-align: left !important;
+  }
+
   .header-actions {
-    width: 100%;
-    justify-content: flex-end;
+    width: auto !important;
+    margin: 0 !important;
+    display: flex !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+  }
+
+  /* Hide clear and report from header on mobile */
+  .header-actions #clearButton,
+  .header-actions #reportButton {
+    display: none !important;
+  }
+
+  /* Hide donate text on mobile header, keep only cup icon */
+  .donate-btn-header .btn-text {
+    display: none !important;
   }
   
+  .donate-btn-header {
+    padding: 8px !important;
+    border-radius: 50% !important;
+    width: 38px !important;
+    height: 38px !important;
+    justify-content: center !important;
+  }
+
+  .table-title-group {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .mobile-table-actions {
+    display: flex !important;
+  }
+
+  .logo-title {
+    font-size: 1.3rem;
+  }
+
   .app-shell {
-    padding: 16px;
+    padding: 12px;
   }
 
   .analysis-grid {
@@ -1296,14 +1434,204 @@ tr:hover td {
     width: 100%;
   }
 
-  .table-tools {
-    width: 100%;
+  .table-header {
+    padding: 14px 16px;
     flex-direction: column;
     align-items: stretch;
+    gap: 12px;
   }
-  
+
+  .table-tools {
+    width: 100%;
+    flex-wrap: wrap;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 8px;
+  }
+
+  .table-tools .ghost-button {
+    flex-grow: 1;
+    font-size: 0.8rem;
+    padding: 8px 10px;
+    justify-content: center;
+  }
+
   th, td {
-    padding: 10px 12px;
+    padding: 8px 10px;
+    font-size: 0.8rem;
+  }
+
+  /* Compact dropzone on mobile app-shell */
+  .upload-panel .drop-zone {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px;
+    min-height: auto;
+  }
+
+  .upload-panel .drop-zone svg {
+    width: 20px !important;
+    height: 20px !important;
+    margin-bottom: 0 !important;
+  }
+
+  .upload-panel .drop-zone span {
+    display: none; /* Hide drag instruction on mobile */
+  }
+
+  .upload-panel .drop-zone strong {
+    font-size: 0.85rem;
+  }
+
+  /* Splash Page mobile adjustments */
+  .splash-screen {
+    padding: 32px 16px;
+  }
+
+  .splash-title {
+    font-size: 2rem;
+  }
+
+  .splash-grid {
+    grid-template-columns: repeat(2, 1fr); /* 2 columns cards for banks */
+    gap: 12px;
+  }
+
+  .splash-card {
+    padding: 16px 12px;
+  }
+
+  .splash-card .brand-mark {
+    width: 36px;
+    height: 36px;
+  }
+
+  .splash-card h3 {
+    font-size: 0.9rem;
+  }
+
+  .splash-drop-zone {
+    padding: 14px 20px;
+    min-height: auto;
+    border-style: solid;
+    background-color: rgba(255, 255, 255, 0.02);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border-radius: 12px;
+  }
+
+  .splash-drop-zone svg {
+    width: 20px !important;
+    height: 20px !important;
+    margin-bottom: 0 !important;
+    color: var(--text-muted);
+  }
+
+  .splash-drop-zone strong {
+    display: none; /* Hide "drag file" text */
+  }
+
+  .splash-drop-zone span {
+    display: block !important; /* Show "Click to select file" */
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  .splash-drop-zone small {
+    display: none;
+  }
+
+  /* Filter strip mobile 2x2 grid */
+  .filter-strip {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .filter-strip label {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    width: 100%;
+  }
+
+  .filter-strip select,
+  .filter-strip input {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  #clearDayButton {
+    grid-column: span 2;
+    width: 100%;
+    justify-content: center;
+  }
+
+  .filter-note {
+    grid-column: span 2;
+    text-align: center;
+    margin: 4px 0 0 0;
+  }
+
+  /* 2x2 Grid for Dashboard metrics on mobile */
+  .metrics-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .metric-card {
+    padding: 14px 12px;
+    min-height: 80px;
+  }
+
+  /* Make Balance change (1st card) and Real Expense (6th card) span full width */
+  .metric-card:nth-child(1),
+  .metric-card:nth-child(6) {
+    grid-column: span 2;
+  }
+
+  .metric-card span {
+    font-size: 0.75rem;
+  }
+
+  .metric-card strong {
+    font-size: 1.15rem;
+    word-break: break-all;
+  }
+
+  /* For full width cards, we can show a larger font size because they have 100% width! */
+  .metric-card:nth-child(1) strong,
+  .metric-card:nth-child(6) strong {
+    font-size: 1.45rem;
+  }
+
+  .metric-card small {
+    font-size: 0.7rem;
+    margin-top: 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .splash-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .splash-card {
+    padding: 12px 8px;
+  }
+  .splash-card h3 {
+    font-size: 0.8rem;
+  }
+  .splash-card .brand-desc {
+    font-size: 0.7rem;
   }
 }
 
@@ -1363,3 +1691,99 @@ tr:hover td {
   box-shadow: 0 0 10px rgba(255, 159, 67, 0.2);
 }
 
+
+/* === TOAST NOTIFICATIONS === */
+.toast-container {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 380px;
+  width: calc(100% - 48px);
+}
+
+.toast {
+  background: rgba(18, 18, 24, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  padding: 14px 16px;
+  color: #ffffff;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transform: translateY(-20px);
+  opacity: 0;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.toast.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.toast-icon {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+
+.toast-content {
+  flex-grow: 1;
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.95);
+}
+
+.toast-close {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  margin-left: 8px;
+}
+
+.toast-close:hover {
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.toast.error {
+  border-color: rgba(239, 68, 68, 0.35);
+  background: rgba(26, 16, 16, 0.94);
+  box-shadow: 0 16px 36px rgba(239, 68, 68, 0.15), 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.toast.error .toast-icon {
+  color: #ef4444;
+}
+
+.toast.error .toast-content {
+  color: #fca5a5;
+}
+
+.toast.success {
+  border-color: rgba(34, 197, 94, 0.35);
+  background: rgba(16, 26, 18, 0.94);
+  box-shadow: 0 16px 36px rgba(34, 197, 94, 0.15), 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.toast.success .toast-icon {
+  color: #22c55e;
+}
+
+.toast.success .toast-content {
+  color: #bbf7d0;
+}

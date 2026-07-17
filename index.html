@@ -232,6 +232,10 @@
                 <dd id="fileName">Файл таңдалмады</dd>
               </div>
               <div>
+                <dt>Шот иесі</dt>
+                <dd id="accountOwner">-</dd>
+              </div>
+              <div>
                 <dt>Шот</dt>
                 <dd id="accountId">-</dd>
               </div>
@@ -276,31 +280,36 @@
               <span>Айлық кіріс жоспары</span>
               <input id="incomePlanInput" type="number" min="0" step="10000" value="0">
             </label>
-            <div class="inline-form">
-              <label class="field-stack">
-                <span>Бюджет категориясы</span>
-                <select id="budgetCategory"></select>
-              </label>
-              <label class="field-stack">
-                <span>Айлық лимит</span>
-                <input id="budgetAmount" type="number" min="0" step="1000" placeholder="0">
-              </label>
-              <button class="ghost-button compact-button" id="saveBudgetButton" type="button">Сақтау</button>
+          </div>
+        </section>
+
+        <!-- PDF Debugger / Inspector Panel -->
+        <section class="panel debug-panel collapsible-panel collapsed" id="debugPanel">
+          <div class="panel-toggle-header" id="debugPanelHeader">
+            <h2>ПДФ Дебаггер / Инспектор</h2>
+            <svg class="chevron-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </svg>
+          </div>
+          <div class="panel-content">
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px;">
+              Жүктелген PDF-тен алынған шикі мәтінді және тану нәтижесін осы жерден көре аласыз.
+            </p>
+            <div class="field-stack">
+              <span>Анықталған банк</span>
+              <strong id="debugDetectedBank" style="color: var(--text-primary); font-size: 0.95rem;">Анықталмады</strong>
             </div>
-            <div class="inline-form">
-              <label class="field-stack">
-                <span>Мақсат атауы</span>
-                <input id="goalName" type="text" placeholder="Мысалы: қор жинау">
-              </label>
-              <label class="field-stack">
-                <span>Мақсат сомасы</span>
-                <input id="goalTarget" type="number" min="0" step="10000" placeholder="0">
-              </label>
-              <label class="field-stack">
-                <span>Жиналды</span>
-                <input id="goalSaved" type="number" min="0" step="10000" placeholder="0">
-              </label>
-              <button class="ghost-button compact-button" id="addGoalButton" type="button">Қосу</button>
+            <div class="field-stack" style="margin-top: 10px;">
+              <span>Шот иесі</span>
+              <strong id="debugAccountOwner" style="color: var(--text-primary); font-size: 0.95rem;">Анықталмады</strong>
+            </div>
+            <div class="field-stack" style="margin-top: 10px;">
+              <span>Табылған транзакциялар</span>
+              <strong id="debugParsedCount" style="color: var(--text-primary); font-size: 0.95rem;">0</strong>
+            </div>
+            <div class="field-stack" style="margin-top: 10px;">
+              <span>PDF-тен оқылған шикі мәтін</span>
+              <textarea id="debugRawText" readonly style="width: 100%; height: 180px; font-family: monospace; font-size: 0.8rem; background: rgba(0,0,0,0.25); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 4px; padding: 8px; resize: vertical; margin-top: 4px; line-height: 1.4; outline: none;"></textarea>
             </div>
           </div>
         </section>
@@ -316,30 +325,40 @@
           <path d="M150,-40 Q650,220 1150,90" stroke="currentColor" stroke-width="1.2" class="orbit-solid" opacity="0.4"/>
         </svg>
 
-        <section class="filter-strip" aria-label="Талдау сүзгілері">
-          <label>
-            <span>Период</span>
-            <select id="periodFilter">
-              <option value="all">Барлық кезең</option>
-              <option value="30">Соңғы 30 күн</option>
-              <option value="90">Соңғы 90 күн</option>
-              <option value="365">Соңғы 1 жыл</option>
-            </select>
-          </label>
-          <label>
-            <span>Уақыт тобы</span>
-            <select id="timeGroup">
-              <option value="auto">Авто</option>
-              <option value="day">Күн бойынша</option>
-              <option value="month">Ай бойынша</option>
-            </select>
-          </label>
-          <label>
-            <span>Күн таңдау</span>
-            <input id="dayFilter" type="date">
-          </label>
-          <button class="ghost-button compact-button" id="clearDayButton" type="button">Күнді тазарту</button>
-          <p class="filter-note" id="activeFilterNote">Файл жүктелмеді</p>
+        <section class="panel collapsible-panel collapsed" id="filterPanel">
+          <div class="panel-toggle-header" id="filterPanelHeader">
+            <h2>Сүзгілер</h2>
+            <svg class="chevron-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+            </svg>
+          </div>
+          <div class="panel-content">
+            <div class="filter-strip" aria-label="Талдау сүзгілері">
+              <label>
+                <span>Период</span>
+                <select id="periodFilter">
+                  <option value="all">Барлық кезең</option>
+                  <option value="30">Соңғы 30 күн</option>
+                  <option value="90">Соңғы 90 күн</option>
+                  <option value="365">Соңғы 1 жыл</option>
+                </select>
+              </label>
+              <label>
+                <span>Уақыт тобы</span>
+                <select id="timeGroup">
+                  <option value="auto">Авто</option>
+                  <option value="day">Күн бойынша</option>
+                  <option value="month">Ай бойынша</option>
+                </select>
+              </label>
+              <label>
+                <span>Күн таңдау</span>
+                <input id="dayFilter" type="date">
+              </label>
+              <button class="ghost-button compact-button" id="clearDayButton" type="button">Күнді тазарту</button>
+              <p class="filter-note" id="activeFilterNote">Файл жүктелмеді</p>
+            </div>
+          </div>
         </section>
 
         <section class="metrics-grid" aria-label="Негізгі көрсеткіштер">
@@ -466,36 +485,6 @@
             <div class="day-detail" id="dayDetail"></div>
           </article>
 
-          <article class="panel top-panel collapsible-panel collapsed">
-            <div class="section-heading panel-toggle-header">
-              <h2>Бюджет лимиттері</h2>
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span id="budgetMonthLabel">Ай</span>
-                <svg class="chevron-icon" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                </svg>
-              </div>
-            </div>
-            <div class="panel-content">
-              <ol class="budget-list" id="budgetList"></ol>
-            </div>
-          </article>
-
-          <article class="panel top-panel collapsible-panel collapsed">
-            <div class="section-heading panel-toggle-header">
-              <h2>Мақсаттар</h2>
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span>Жергілікті</span>
-                <svg class="chevron-icon" viewBox="0 0 24 24" aria-hidden="true">
-                  <path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                </svg>
-              </div>
-            </div>
-            <div class="panel-content">
-              <ol class="goal-list" id="goalList"></ol>
-            </div>
-          </article>
-
 
           <article class="panel top-panel collapsible-panel collapsed">
             <div class="section-heading panel-toggle-header">
@@ -560,7 +549,23 @@
 
         <section class="panel table-panel">
           <div class="table-header">
-            <h2>Транзакциялар тізімі</h2>
+            <div class="table-title-group">
+              <h2>Транзакциялар тізімі</h2>
+              <div class="mobile-table-actions">
+                <button class="ghost-button mobile-only-btn" id="clearButtonMobile" type="button" title="Деректі тазарту">
+                  <svg viewBox="0 0 24 24" aria-hidden="true" style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;">
+                    <path d="M3 6h18M8 6V4h8v2M9 10v8M15 10v8M5 6l1 15h12l1-15"></path>
+                  </svg>
+                  <span>Тазарту</span>
+                </button>
+                <button class="ghost-button mobile-only-btn" id="reportButtonMobile" type="button" title="HTML есеп">
+                  <svg viewBox="0 0 24 24" aria-hidden="true" style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2;">
+                    <path d="M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6M10 9h1"></path>
+                  </svg>
+                  <span>Есеп</span>
+                </button>
+              </div>
+            </div>
             <div class="table-tools">
               <label class="search-box">
                 <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -576,32 +581,44 @@
                 <option value="cash">Қолма-қол</option>
               </select>
               <button class="ghost-button" id="exportButton" type="button" title="CSV экспорт">
-                <svg viewBox="0 0 24 24" aria-hidden="true" style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.5; margin-right: 4px;">
-                  <path d="M12 3v12M7 10l5 5 5-5M5 21h14"></path>
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <path d="M8 13h8M8 17h8"/>
                 </svg>
                 CSV
               </button>
               <button class="ghost-button" id="exportExcelButton" type="button" title="Excel (XLSX) экспорт">
-                <svg viewBox="0 0 24 24" aria-hidden="true" style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.5; margin-right: 4px;">
-                  <path d="M14 3v4a1 1 0 0 0 1 1h4 M14 17H4V3h10v5h5v9H14z"></path>
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <path d="M8 13h8M8 17h8M12 10v10"/>
                 </svg>
                 Excel
               </button>
               <button class="ghost-button" id="exportWordButton" type="button" title="Word (DOCX) экспорт">
-                <svg viewBox="0 0 24 24" aria-hidden="true" style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.5; margin-right: 4px;">
-                  <path d="M14 3v4a1 1 0 0 0 1 1h4 M14 17H4V3h10v5h5v9H14z"></path>
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="8" y1="13" x2="16" y2="13"/>
+                  <line x1="8" y1="17" x2="14" y2="17"/>
                 </svg>
                 Word
               </button>
               <button class="ghost-button" id="exportPdfButton" type="button" title="PDF есеп экспорт">
-                <svg viewBox="0 0 24 24" aria-hidden="true" style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.5; margin-right: 4px;">
-                  <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6 M18 9h1.5a2.5 2.5 0 0 0 0-5H18 M12 4v5M12 4L9 7M12 4l3 7"></path>
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <path d="M8 12v6M8 12h2a1.5 1.5 0 0 1 0 3H8M11.5 12v6M11.5 12h1a3 3 0 0 1 0 6h-1M15.5 12v6M15.5 12h2.5M15.5 15h2"/>
                 </svg>
                 PDF
               </button>
               <button class="ghost-button" id="exportJsonButton" type="button" title="JSON экспорт">
-                <svg viewBox="0 0 24 24" aria-hidden="true" style="width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.5; margin-right: 4px;">
-                  <path d="M6 3h12v18H6zM9 8h6M9 12h6M9 16h3"></path>
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <path d="M10 12a1 1 0 0 0-1 1v1a1 1 0 0 1-1 1 1 1 0 0 1 1-1v-1a1 1 0 0 0 1-1"/>
+                  <path d="M14 12a1 1 0 0 1 1 1v1a1 1 0 0 0 1 1 1 1 0 0 0-1-1v-1a1 1 0 0 1-1-1"/>
                 </svg>
                 JSON
               </button>

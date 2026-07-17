@@ -115,9 +115,11 @@ const els = {
   splashFileInput: document.getElementById('splashFileInput'),
   dropZone: document.getElementById('dropZone'),
   clearButton: document.getElementById('clearButton'),
+  clearButtonMobile: document.getElementById('clearButtonMobile'),
   exportButton: document.getElementById('exportButton'),
   exportJsonButton: document.getElementById('exportJsonButton'),
   reportButton: document.getElementById('reportButton'),
+  reportButtonMobile: document.getElementById('reportButtonMobile'),
   searchInput: document.getElementById('searchInput'),
   typeFilter: document.getElementById('typeFilter'),
   periodFilter: document.getElementById('periodFilter'),
@@ -137,7 +139,12 @@ const els = {
   addGoalButton: document.getElementById('addGoalButton'),
   activeFilterNote: document.getElementById('activeFilterNote'),
   statusLine: document.getElementById('statusLine'),
+  debugDetectedBank: document.getElementById('debugDetectedBank'),
+  debugAccountOwner: document.getElementById('debugAccountOwner'),
+  debugParsedCount: document.getElementById('debugParsedCount'),
+  debugRawText: document.getElementById('debugRawText'),
   fileName: document.getElementById('fileName'),
+  accountOwner: document.getElementById('accountOwner'),
   accountId: document.getElementById('accountId'),
   cardTitle: document.getElementById('cardTitle'),
   periodText: document.getElementById('periodText'),
@@ -347,23 +354,29 @@ els.incomePlanInput.addEventListener('change', () => {
   saveSettings()
   render()
 })
-els.budgetCategory.addEventListener('change', () => {
-  els.budgetAmount.value = settings.budgets[els.budgetCategory.value] || ''
-})
-els.saveBudgetButton.addEventListener('click', () => {
-  const category = els.budgetCategory.value
-  const amount = Math.max(0, Number(els.budgetAmount.value) || 0)
-  if (amount > 0) {
-    settings.budgets[category] = amount
-  } else {
-    delete settings.budgets[category]
-  }
-  saveSettings()
-  render()
-})
-els.addGoalButton.addEventListener('click', () => {
-  addGoal()
-})
+if (els.budgetCategory) {
+  els.budgetCategory.addEventListener('change', () => {
+    els.budgetAmount.value = settings.budgets[els.budgetCategory.value] || ''
+  })
+}
+if (els.saveBudgetButton) {
+  els.saveBudgetButton.addEventListener('click', () => {
+    const category = els.budgetCategory.value
+    const amount = Math.max(0, Number(els.budgetAmount.value) || 0)
+    if (amount > 0) {
+      settings.budgets[category] = amount
+    } else {
+      delete settings.budgets[category]
+    }
+    saveSettings()
+    render()
+  })
+}
+if (els.addGoalButton) {
+  els.addGoalButton.addEventListener('click', () => {
+    addGoal()
+  })
+}
 els.clearDayButton.addEventListener('click', () => {
   els.dayFilter.value = ''
   render()
@@ -377,13 +390,15 @@ els.calendarHeatmap.addEventListener('click', event => {
   window.scrollTo({ top: 0, behavior: 'smooth' })
 })
 
-els.goalList.addEventListener('click', event => {
-  const button = event.target.closest('[data-delete-goal]')
-  if (!button) return
-  settings.goals = settings.goals.filter(goal => goal.id !== button.dataset.deleteGoal)
-  saveSettings()
-  render()
-})
+if (els.goalList) {
+  els.goalList.addEventListener('click', event => {
+    const button = event.target.closest('[data-delete-goal]')
+    if (!button) return
+    settings.goals = settings.goals.filter(goal => goal.id !== button.dataset.deleteGoal)
+    saveSettings()
+    render()
+  })
+}
 
 els.transactionTable.addEventListener('change', event => {
   const categoryControl = event.target.closest('[data-category-key]')
@@ -432,6 +447,10 @@ els.clearButton.addEventListener('click', () => {
   els.dayFilter.value = ''
   els.dayFilter.removeAttribute('min')
   els.dayFilter.removeAttribute('max')
+  if (els.debugDetectedBank) els.debugDetectedBank.textContent = 'Анықталмады'
+  if (els.debugAccountOwner) els.debugAccountOwner.textContent = 'Анықталмады'
+  if (els.debugParsedCount) els.debugParsedCount.textContent = '0'
+  if (els.debugRawText) els.debugRawText.value = ''
   render()
 })
 
@@ -459,6 +478,18 @@ els.reportButton.addEventListener('click', () => {
   exportHtmlReport()
 })
 
+if (els.clearButtonMobile) {
+  els.clearButtonMobile.addEventListener('click', () => {
+    els.clearButton.click()
+  })
+}
+
+if (els.reportButtonMobile) {
+  els.reportButtonMobile.addEventListener('click', () => {
+    els.reportButton.click()
+  })
+}
+
 window.addEventListener('resize', () => {
   drawDailyChart(els.dailyChart, buildTimeStats(state.filtered).items)
 })
@@ -477,9 +508,11 @@ async function handleFiles(files) {
   try {
     const parsedStatements = []
     let detectedBankCode = state.activeBank // Default fallback to active selection
+    let allText = ''
 
     for (const file of pdfFiles) {
       const text = await readPdfText(file)
+      allText += `=== Файл: ${file.name} ===\n` + text + '\n\n'
       
       // Auto-detect the bank format from PDF text content
       const autoBank = autoDetectBank(text)
@@ -488,7 +521,7 @@ async function handleFiles(files) {
       }
 
       if (!detectedBankCode) {
-        throw new Error(`${file.name}: бұл қолдау көрсетілетін банк көшірмесіне ұқсамайды. Алдымен банкті таңдаңыз.`)
+        throw new Error(`«${file.name}» файлы қолдау көрсетілетін банк көшірмесіне ұқсамайды. Төлемдер тарихы (транзакциялар тізімі) бар дұрыс PDF үзінді көшірмесін жүктегеніңізге көз жеткізіңіз.`)
       }
 
       // If detected bank differs from current select state, shift it
@@ -502,10 +535,28 @@ async function handleFiles(files) {
     }
 
     const transactions = dedupeTransactions(parsedStatements.flatMap(s => s.transactions))
-    markTransitTransactions(transactions)
+    if (transactions.length === 0) {
+      throw new Error("Құжат анықталды, бірақ оның ішінде ешқандай транзакция табылмады. Төлемдер тарихы (транзакциялар тізімі) бар дұрыс PDF үзінді көшірмесін жүктегеніңізге көз жеткізіңіз.")
+    }
     const latestAccount = parsedStatements
       .map(s => s.account)
       .sort((a, b) => new Date(b.statementDate) - new Date(a.statementDate))[0]
+    
+    // Update PDF Debugger / Inspector Panel
+    if (els.debugDetectedBank) {
+      els.debugDetectedBank.textContent = BANKS[detectedBankCode] ? BANKS[detectedBankCode].name : 'Анықталмады'
+    }
+    if (els.debugAccountOwner) {
+      els.debugAccountOwner.textContent = latestAccount?.owner || 'Анықталмады'
+    }
+    if (els.debugParsedCount) {
+      els.debugParsedCount.textContent = transactions.length
+    }
+    if (els.debugRawText) {
+      els.debugRawText.value = allText.substring(0, 5000)
+    }
+
+    markTransitTransactions(transactions)
 
     state.sourceName = pdfFiles.map(file => file.name).join(', ')
     state.account = latestAccount
@@ -530,6 +581,15 @@ async function handleFiles(files) {
   } catch (error) {
     console.error(error)
     setStatus(error.message || String(error), true)
+    if (els.debugDetectedBank) {
+      els.debugDetectedBank.textContent = 'Қате орын алды'
+    }
+    if (els.debugParsedCount) {
+      els.debugParsedCount.textContent = '0'
+    }
+    if (els.debugRawText) {
+      els.debugRawText.value = `Қате орын алды:\n${error.message || String(error)}`
+    }
   }
 }
 
@@ -552,23 +612,39 @@ async function readPdfText(file) {
   for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
     const page = await pdf.getPage(pageNumber)
     const content = await page.getTextContent({
-      normalizeWhitespace: false,
-      disableCombineTextItems: true
+      normalizeWhitespace: true,
+      disableCombineTextItems: false
     })
-    let pageText = ''
-    let lastY = null
-    for (const item of content.items) {
-      const y = item.transform?.[5]
-      if (lastY === null) {
-        pageText += item.str
-      } else if (y === lastY) {
-        pageText += ' ' + item.str
+    
+    const items = content.items.filter(item => item.transform && typeof item.str === 'string')
+    const rows = []
+    const yThreshold = 3.5
+    
+    for (const item of items) {
+      const x = item.transform[4]
+      const y = item.transform[5]
+      
+      let foundRow = rows.find(r => Math.abs(r.y - y) <= yThreshold)
+      if (foundRow) {
+        foundRow.items.push({ x, str: item.str })
       } else {
-        pageText += '\n' + item.str
+        rows.push({
+          y: y,
+          items: [{ x, str: item.str }]
+        })
       }
-      lastY = y
     }
-    fullText += '\n' + pageText
+    
+    rows.sort((a, b) => b.y - a.y)
+    
+    let pageText = ''
+    for (const row of rows) {
+      row.items.sort((a, b) => a.x - b.x)
+      const rowStr = row.items.map(it => it.str).join(' ')
+      pageText += rowStr + '\n'
+    }
+    
+    fullText += pageText + '\n'
   }
   return fullText
 }
@@ -599,6 +675,7 @@ function parseKaspi(text, fileName) {
     /((\d\d\.?){3})ж\.\s*қолжетімді:/
   ])
   
+  const owner = extractOwnerName(text)
   const period = parsePeriodCommon(text)
   const title = cardNumber ? `Kaspi Gold ${cardNumber}` : 'Kaspi Gold'
   const signatureCounts = {}
@@ -621,6 +698,7 @@ function parseKaspi(text, fileName) {
     account: {
       id: accountId,
       title,
+      owner,
       balance,
       period,
       statementDate: statementDate ? parseDate(statementDate) : new Date()
@@ -628,6 +706,12 @@ function parseKaspi(text, fileName) {
     transactions
   }
 }
+
+const KASPI_OPS = [
+  'Зат сатып алу', 'Аударым', 'Толықтыру', 'Қолма-қол', 'Комиссия', 'Қайтарым',
+  'Покупка', 'Перевод', 'Пополнение', 'Снятие', 'Комиссия', 'Возврат',
+  'Purchase', 'Transfer', 'Replenishment', 'Withdrawal', 'Commission', 'Refund'
+];
 
 function parseTransactionsKaspi(text) {
   const lines = text.split('\n')
@@ -640,22 +724,48 @@ function parseTransactionsKaspi(text) {
     const originalAmount = /^\s*\(?\s*[-+]?\s*[\d\s.,]+\s*[A-Z]{3}\s*\)?\s*$/.test(nextLine) ? nextLine.trim() : null
     if (originalAmount) index++
 
-    const match = line.match(/^\s*(\d{2}\.\d{2}\.\d{2})(?:\s+(\d{2}:\d{2}))?\s*([+-])\s*([\d\s.,]+)\s*([^\d\s]+)\s+(.+?)\s{2,}(.+?)\s*$/)
+    // Match the date, optional time, sign, amount, currency, and tail
+    const match = line.match(/^\s*(\d{2}\.\d{2}\.\d{2})(?:\s+(\d{2}:\d{2}))?\s*([+-])\s*([\d\s.,]+)\s*([^\d\s]+)\s+(.+?)\s*$/)
     if (match) {
-      const [, dateText, timeText, sign, amountText, currency, operation, description] = match
+      const [, dateText, timeText, sign, amountText, currency, tail] = match
+      const cleanTail = tail.trim()
+      
+      let operationStr = ''
+      let descriptionStr = ''
+      
+      // Separate operation from description by checking known prefixes
+      const foundOp = KASPI_OPS.find(op => cleanTail.toLowerCase().startsWith(op.toLowerCase()))
+      if (foundOp && cleanTail.length > foundOp.length && (cleanTail[foundOp.length] === ' ' || cleanTail[foundOp.length] === '\t')) {
+        operationStr = foundOp
+        descriptionStr = cleanTail.substring(foundOp.length).trim()
+      } else if (foundOp && cleanTail.length === foundOp.length) {
+        operationStr = foundOp
+        descriptionStr = ''
+      } else {
+        // Fallback to first word split if no match
+        const spaceIndex = cleanTail.indexOf(' ')
+        if (spaceIndex !== -1) {
+          operationStr = cleanTail.substring(0, spaceIndex).trim()
+          descriptionStr = cleanTail.substring(spaceIndex).trim()
+        } else {
+          operationStr = cleanTail
+          descriptionStr = ''
+        }
+      }
+
       let amount = parseNumber(amountText) * (sign === '-' ? -1 : 1)
-      const type = normalizeTypeCommon(operation, description, amount)
-      const category = categorizeCommon({ type, operation, description, amount })
+      const type = normalizeTypeCommon(operationStr, descriptionStr, amount)
+      const category = categorizeCommon({ type, operation: operationStr, description: descriptionStr, amount })
       const time = timeText || ''
       transactions.push({
-        id: `${dateText}:${time}:${amount}:${operation}:${description}`,
+        id: `${dateText}:${time}:${amount}:${operationStr}:${descriptionStr}`,
         date: parseDate(dateText, time),
         dateText,
         time,
         amount,
         currency: mapCurrency(currency),
-        operation: operation.trim(),
-        description: description.trim(),
+        operation: operationStr,
+        description: descriptionStr,
         originalAmount,
         type,
         category
@@ -701,6 +811,7 @@ function parseHalyk(text, fileName) {
     /Доступно\s+на\s+((\d\d\.?){3})/i,
     /Дата выписки:\s*((\d\d\.?){3})/i
   ])
+  const owner = extractOwnerName(text)
   const period = parsePeriodCommon(text)
   const title = cardNumber ? `Halyk Card ${cardNumber}` : 'Halyk Card'
   const signatureCounts = {}
@@ -724,6 +835,7 @@ function parseHalyk(text, fileName) {
     account: {
       id: accountId,
       title,
+      owner,
       balance,
       period,
       statementDate: statementDate ? parseDate(statementDate) : new Date()
@@ -777,7 +889,21 @@ function parseTransactionsHalyk(text) {
       /кіріс/i,
       /шығыс/i,
       /Комиссия/i,
-      /Карточка\/шот/i
+      /Карточка\/шот/i,
+      // Russian Halyk statement headers
+      /Дата совершения/i,
+      /Дата обработки/i,
+      /Описание операции/i,
+      /Сумма операции/i,
+      /Валюта операции/i,
+      /Сумма в валюте/i,
+      /Комиссия по/i,
+      /Выписка по карточ/i,
+      /Выписка по платеж/i,
+      /Всего:/i,
+      /Печать банка/i,
+      /Входящий остаток/i,
+      /Исходящий остаток/i
     ]
     return junkPatterns.some(p => p.test(textLine))
   }
@@ -937,6 +1063,7 @@ function parseForte(text, fileName) {
   const balanceMatch = firstDetailedMatch(text, [/Баланс:\s*(?:\+\s*)?(-?[\d\s.,]*\d)/i, /Итого:\s*(?:\+\s*)?(-?[\d\s.,]*\d)/i])
   const balance = balanceMatch ? parseNumber(balanceMatch[1]) : 0
 
+  const owner = extractOwnerName(text)
   const period = parsePeriodCommon(text)
   const title = cardNumber ? `Forte Card ${cardNumber}` : 'Forte Card'
   const signatureCounts = {}
@@ -959,6 +1086,7 @@ function parseForte(text, fileName) {
     account: {
       id: accountId,
       title,
+      owner,
       balance,
       period,
       statementDate: new Date()
@@ -983,15 +1111,15 @@ function parseTransactionsForte(text) {
       let operation = 'Басқа'
       let description = details
 
-      if (/покупка|оплата|retail|pay/i.test(details)) {
+      if (/покупка|оплата|retail|pay|зат сатып алу|төлем/i.test(details)) {
         operation = 'Зат сатып алу'
         if (!sign) sign = '-'
-      } else if (/перевод|transfer|p2p/i.test(details)) {
+      } else if (/перевод|transfer|p2p|аударым/i.test(details)) {
         operation = 'Аударым'
-      } else if (/снятие|cash|atm/i.test(details)) {
+      } else if (/снятие|cash|atm|ақша алу|шешу/i.test(details)) {
         operation = 'Қолма-қол'
         if (!sign) sign = '-'
-      } else if (/зачисление|пополнение|incoming|salary/i.test(details)) {
+      } else if (/зачисление|пополнение|incoming|salary|толықтыру|түсім/i.test(details)) {
         operation = 'Кіріс'
         if (!sign) sign = '+'
       }
@@ -1031,6 +1159,7 @@ function parseJusan(text, fileName) {
   ])
   const balance = balanceMatch ? parseNumber(balanceMatch[1]) : 0
 
+  const owner = extractOwnerName(text)
   const period = parsePeriodCommon(text)
   const title = cardNumber ? `Alatau Card ${cardNumber}` : 'Alatau Card'
   const signatureCounts = {}
@@ -1053,6 +1182,7 @@ function parseJusan(text, fileName) {
     account: {
       id: accountId,
       title,
+      owner,
       balance,
       period,
       statementDate: new Date()
@@ -1064,8 +1194,8 @@ function parseJusan(text, fileName) {
 function parseTransactionsJusan(text) {
   const transactions = []
   
-  // Find all sections starting with "Шот бойынша транзакциялар"
-  const sections = text.split(/Шот бойынша транзакциялар/i)
+  // Find all sections starting with "Шот бойынша транзакциялар" or Russian equivalents
+  const sections = text.split(/Шот бойынша транзакциялар|Транзакции по счету|Операции по счету/i)
   
   for (let s = 1; s < sections.length; s++) {
     const sectionText = sections[s]
@@ -1168,6 +1298,7 @@ function parseBcc(text, fileName) {
   const balanceMatch = firstDetailedMatch(text, [/Баланс:\s*(-?[\d\s.,]*\d)/i, /Итоговый:\s*(-?[\d\s.,]*\d)/i])
   const balance = balanceMatch ? parseNumber(balanceMatch[1]) : 0
 
+  const owner = extractOwnerName(text)
   const period = parsePeriodCommon(text)
   const title = cardNumber ? `BCC Card ${cardNumber}` : 'BCC Card'
   const signatureCounts = {}
@@ -1190,6 +1321,7 @@ function parseBcc(text, fileName) {
     account: {
       id: accountId,
       title,
+      owner,
       balance,
       period,
       statementDate: new Date()
@@ -1214,15 +1346,15 @@ function parseTransactionsBcc(text) {
       let operation = 'Басқа'
       let description = details
 
-      if (/покупка|оплата|bcc pay|pos/i.test(details)) {
+      if (/покупка|оплата|bcc pay|pos|зат сатып алу|төлем/i.test(details)) {
         operation = 'Зат сатып алу'
         if (!sign) sign = '-'
       } else if (/перевод|аударым|p2p/i.test(details)) {
         operation = 'Аударым'
-      } else if (/снятие|cash|atm/i.test(details)) {
+      } else if (/снятие|cash|atm|ақша алу|шешу/i.test(details)) {
         operation = 'Қолма-қол'
         if (!sign) sign = '-'
-      } else if (/зачисление|пополнение|зарплата|incoming/i.test(details)) {
+      } else if (/зачисление|пополнение|зарплата|incoming|толықтыру|түсім/i.test(details)) {
         operation = 'Кіріс'
         if (!sign) sign = '+'
       }
@@ -1250,6 +1382,24 @@ function parseTransactionsBcc(text) {
   return transactions
 }
 
+function extractOwnerName(text) {
+  const match = firstOptionalMatch(text, [
+    /подтверждает,\s*что\s+([^,]+?)(?:,|\s+ИИН|\s+ЖСН)/i,
+    /certify\s+that\s+([^,]+?)(?:,|\s+IIN)/i,
+    /«Kaspi\s+Bank»\s+АҚ\s+([^,]+?)(?:,|\s+ЖСН)/i,
+    /ФИО:\s*([^,\n]+)/i,
+    /Ф\.И\.О\.:\s*([^,\n]+)/i,
+    /Клиент:\s*([^,\n]+)/i,
+    /Client:\s*([^,\n]+)/i,
+    /Клиенті:\s*([^,\n]+)/i,
+    /Владелец счета:\s*([^,\n]+)/i,
+    /Account Holder:\s*([^,\n]+)/i,
+    /Наименование клиента:\s*([^,\n]+)/i
+  ])
+  if (!match) return ''
+  return match.replace(/\s+/g, ' ').trim()
+}
+
 // === UTILITIES AND SUPPORTIVE METHODS ===
 
 function parsePeriodCommon(text) {
@@ -1272,7 +1422,7 @@ function normalizeTypeCommon(operation, description, amount) {
     return amount > 0 ? 'income' : 'transfer'
   }
   if (/пополнение|replenishment|толықтыру|зачисление/.test(text)) {
-    return 'income'
+    return amount > 0 ? 'income' : 'purchase'
   }
   if (/покупка|purchases|зат сатып алу|плата|оплата/.test(text)) {
     return 'purchase'
@@ -1281,29 +1431,29 @@ function normalizeTypeCommon(operation, description, amount) {
 }
 
 function categorizeCommon({ type, description, amount }) {
-  const text = description.toLowerCase()
+  const text = (description || '').toLowerCase()
   if (type === 'income') {
     return amount > 0 ? 'Кіріс' : 'Қайтарым'
   }
   if (type === 'transfer') {
     return 'Аударым'
   }
-  if (/комис|fee|charge/.test(text)) {
+  if (/комис|fee|charge|қызмет көрсету ақысы|плата за обслуживание/.test(text)) {
     return 'Комиссия'
   }
-  if (/onay|билет|жол ақы|теңгерімді толтыру/.test(text)) {
+  if (/onay|билет|жол ақы|теңгерімді толтыру|taxi|такси|yandex.*go|yandex.*taxi|uber|kolesa|колеса/.test(text)) {
     return 'Көлік'
   }
   if (/apteka|аптека|apotheke|omega|pharma|дәріхана/.test(text)) {
     return 'Дәріхана'
   }
-  if (/clinic|клиник|мед|стомат|dent|optika|оптика/.test(text)) {
+  if (/clinic|клиник|мед|стомат|dent|optika|оптика|здоровь/.test(text)) {
     return 'Денсаулық'
   }
-  if (/magnum|магазин|маркет|мини|minimarket|cash&carry|южный|алатау|small|galmart|arbuz/.test(text)) {
+  if (/magnum|магазин|маркет|мини|minimarket|cash&carry|южный|алатау|small|galmart|arbuz|корзина|супермаркет/.test(text)) {
     return 'Азық-түлік'
   }
-  if (/maki|belissimo|food|cafe|coffee|кофе|restaurant|restoran|burger|kfc|doner|pizza|пицца/.test(text)) {
+  if (/maki|belissimo|food|cafe|coffee|кофе|restaurant|restoran|burger|kfc|doner|pizza|пицца|bauyrsaq|бауырсақ|fast\s*food/.test(text)) {
     return 'Тамақ'
   }
   if (/activ|kcell|tele2|beeline|internet|интернет|байланыс/.test(text)) {
@@ -1482,9 +1632,57 @@ function addGroup(obj, key, val) {
   obj[key].count++
 }
 
+function showToast(message, type = 'info') {
+  let container = document.getElementById('toastContainer')
+  if (!container) {
+    container = document.createElement('div')
+    container.id = 'toastContainer'
+    container.className = 'toast-container'
+    document.body.appendChild(container)
+  }
+
+  const toast = document.createElement('div')
+  toast.className = `toast ${type}`
+
+  let iconSvg = ''
+  if (type === 'error') {
+    iconSvg = `<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`
+  } else if (type === 'success') {
+    iconSvg = `<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`
+  } else {
+    iconSvg = `<svg class="toast-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`
+  }
+
+  toast.innerHTML = `
+    ${iconSvg}
+    <div class="toast-content">${message}</div>
+    <button class="toast-close" type="button" aria-label="Жабу">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  `
+
+  container.appendChild(toast)
+
+  setTimeout(() => toast.classList.add('show'), 10)
+
+  const autoCloseTimeout = setTimeout(() => {
+    toast.classList.remove('show')
+    setTimeout(() => toast.remove(), 300)
+  }, 6000)
+
+  toast.querySelector('.toast-close').addEventListener('click', () => {
+    clearTimeout(autoCloseTimeout)
+    toast.classList.remove('show')
+    setTimeout(() => toast.remove(), 300)
+  })
+}
+
 function setStatus(text, isError = false) {
   els.statusLine.textContent = text
   els.statusLine.classList.toggle('negative', isError)
+  if (isError) {
+    showToast(text, 'error')
+  }
 }
 
 function loadSettings() {
@@ -1493,7 +1691,7 @@ function loadSettings() {
     if (raw) {
       const parsed = JSON.parse(raw)
       return {
-        privacyMode: false,
+        privacyMode: true,
         excludeInternal: false,
         largeAmount: 50000,
         monthlyIncomePlan: 0,
@@ -1507,7 +1705,7 @@ function loadSettings() {
     console.error(e)
   }
   return {
-    privacyMode: false,
+    privacyMode: true,
     excludeInternal: false,
     largeAmount: 50000,
     monthlyIncomePlan: 0,
@@ -1531,16 +1729,18 @@ function initializeSettingsControls() {
   els.largeAmountInput.value = settings.largeAmount
   els.incomePlanInput.value = settings.monthlyIncomePlan
   
-  // Populate budget options select dropdown list
-  els.budgetCategory.innerHTML = ''
-  for (const cat of categoryOptions) {
-    if (cat === 'Кіріс' || cat === 'Қайтарым') continue
-    const opt = document.createElement('option')
-    opt.value = cat
-    opt.textContent = cat
-    els.budgetCategory.appendChild(opt)
+  // Populate budget options select dropdown list if element exists
+  if (els.budgetCategory) {
+    els.budgetCategory.innerHTML = ''
+    for (const cat of categoryOptions) {
+      if (cat === 'Кіріс' || cat === 'Қайтарым') continue
+      const opt = document.createElement('option')
+      opt.value = cat
+      opt.textContent = cat
+      els.budgetCategory.appendChild(opt)
+    }
+    els.budgetAmount.value = settings.budgets[els.budgetCategory.value] || ''
   }
-  els.budgetAmount.value = settings.budgets[els.budgetCategory.value] || ''
 }
 
 // === FINANCIAL METRICS MATH AND ANALYSIS RENDERING ===
@@ -1744,6 +1944,9 @@ function getTransactionNote(transaction) {
 // === RENDERERS ===
 
 function render() {
+  if (els.appShell) {
+    els.appShell.classList.toggle('has-no-transactions', state.transactions.length === 0)
+  }
   state.filtered = applyFilters(state.transactions)
   const stats = buildStats(state.filtered)
   const allStats = buildStats(state.transactions)
@@ -1754,6 +1957,7 @@ function render() {
   const account = state.account
 
   els.fileName.textContent = state.sourceName || 'Файл таңдалмады'
+  els.accountOwner.textContent = account?.owner || '-'
   els.accountId.textContent = account ? maskAccount(account.id, settings.privacyMode) : '-'
   els.cardTitle.textContent = account?.title || '-'
   els.periodText.textContent = state.transactions.length > 0 ? getDatasetPeriod(state.transactions) : '-'
@@ -1932,17 +2136,22 @@ function renderPeopleList(transactions) {
   for (const item of items) {
     const li = document.createElement('li')
     li.className = 'list-row'
-    const details = []
-    if (item.income > 0) details.push(`+${formatMoney(item.income)}`)
-    if (item.expense > 0) details.push(`-${formatMoney(item.expense)}`)
     
     li.innerHTML = `
-      <button class="list-title" type="button" data-search-text="${item.name}" style="background: none; border: none; font: inherit; color: inherit; cursor: pointer; text-align: left;">
-        👤 ${item.name} (${item.count})
+      <button class="list-title" type="button" data-search-text="${item.name}" style="background: none; border: none; font: inherit; color: inherit; cursor: pointer; text-align: left; display: flex; flex-direction: column; gap: 4px; padding: 0;">
+        <span style="font-weight: 600; display: flex; align-items: center; gap: 6px;">👤 ${item.name}</span>
+        <span style="font-size: 0.75rem; color: var(--text-muted);">${item.count} операция</span>
       </button>
-      <span class="list-value ${item.net > 0 ? 'positive' : item.net < 0 ? 'negative' : ''}">
-        ${details.join(' · ')} (${item.net > 0 ? '+' : ''}${formatMoney(item.net)})
-      </span>
+      <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; text-align: right;">
+        <span class="list-value ${item.net > 0 ? 'positive' : item.net < 0 ? 'negative' : ''}">
+          ${item.net > 0 ? '+' : ''}${formatMoney(item.net)}
+        </span>
+        ${item.income > 0 && item.expense > 0 ? `
+          <span style="font-size: 0.7rem; color: var(--text-muted); white-space: nowrap;">
+            +${formatMoney(item.income)} / -${formatMoney(item.expense)}
+          </span>
+        ` : ''}
+      </div>
     `
     els.peopleList.appendChild(li)
   }
@@ -1969,23 +2178,36 @@ function renderPeriodList(timeStats) {
     const li = document.createElement('li')
     li.className = 'list-row'
     
-    let btnHtml = ''
+    let leftContent = ''
     if (timeStats.group === 'month') {
-      btnHtml = `<span class="list-title">📅 ${item.label} (${item.count})</span>`
+      leftContent = `
+        <div class="list-title" style="display: flex; flex-direction: column; gap: 4px;">
+          <span style="font-weight: 600; display: flex; align-items: center; gap: 6px;">📅 ${item.label}</span>
+          <span style="font-size: 0.75rem; color: var(--text-muted);">${item.count} операция</span>
+        </div>
+      `
     } else {
       const dbDate = toInputDate(item.date)
-      btnHtml = `
-        <button class="list-title" type="button" data-period-day="${dbDate}" style="background: none; border: none; font: inherit; color: inherit; cursor: pointer; text-align: left;">
-          📅 ${item.label} (${item.count})
+      leftContent = `
+        <button class="list-title" type="button" data-period-day="${dbDate}" style="background: none; border: none; font: inherit; color: inherit; cursor: pointer; text-align: left; display: flex; flex-direction: column; gap: 4px; padding: 0;">
+          <span style="font-weight: 600; display: flex; align-items: center; gap: 6px;">📅 ${item.label}</span>
+          <span style="font-size: 0.75rem; color: var(--text-muted);">${item.count} операция</span>
         </button>
       `
     }
     
     li.innerHTML = `
-      ${btnHtml}
-      <span class="list-value ${item.net > 0 ? 'positive' : item.net < 0 ? 'negative' : ''}">
-        +${formatMoney(item.income)} / -${formatMoney(item.expense)} (${item.net > 0 ? '+' : ''}${formatMoney(item.net)})
-      </span>
+      ${leftContent}
+      <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; text-align: right;">
+        <span class="list-value ${item.net > 0 ? 'positive' : item.net < 0 ? 'negative' : ''}">
+          ${item.net > 0 ? '+' : ''}${formatMoney(item.net)}
+        </span>
+        ${item.income > 0 && item.expense > 0 ? `
+          <span style="font-size: 0.7rem; color: var(--text-muted); white-space: nowrap;">
+            +${formatMoney(item.income)} / -${formatMoney(item.expense)}
+          </span>
+        ` : ''}
+      </div>
     `
     els.periodList.appendChild(li)
   }
@@ -2137,14 +2359,15 @@ function renderDayDetail(transactions) {
 }
 
 function renderBudgetList(transactions, monthContext) {
+  if (!els.budgetList) return
   els.budgetList.innerHTML = ''
   if (!monthContext) {
-    els.budgetMonthLabel.textContent = 'Ай жоқ'
+    if (els.budgetMonthLabel) els.budgetMonthLabel.textContent = 'Ай жоқ'
     els.budgetList.innerHTML = '<li class="list-row"><span class="list-title">Файл жүктеңіз</span></li>'
     return
   }
 
-  els.budgetMonthLabel.textContent = monthContext.label
+  if (els.budgetMonthLabel) els.budgetMonthLabel.textContent = monthContext.label
   const monthOps = getMonthTransactions(transactions, monthContext)
   
   const spendByCat = {}
@@ -2180,6 +2403,7 @@ function renderBudgetList(transactions, monthContext) {
 }
 
 function renderGoalList() {
+  if (!els.goalList) return
   els.goalList.innerHTML = ''
   if (settings.goals.length === 0) {
     els.goalList.innerHTML = '<li class="list-row"><span class="list-title">Мақсаттар жоқ</span></li>'
@@ -2328,8 +2552,14 @@ function renderRecurringList(transactions) {
     const li = document.createElement('li')
     li.className = 'list-row'
     li.innerHTML = `
-      <span class="list-title">🔁 ${item.description} (айына ${item.count} рет)</span>
-      <span class="list-value">${formatMoney(Math.abs(item.average))} (орташа)</span>
+      <span class="list-main-col">
+        <span class="list-title">🔁 ${item.description}</span>
+        <span class="list-subtitle">айына ${item.count} рет</span>
+      </span>
+      <span class="list-amount-col">
+        <span class="list-value">${formatMoney(Math.abs(item.average))}</span>
+        <span class="list-subtitle">орташа</span>
+      </span>
     `
     els.recurringList.appendChild(li)
   }
