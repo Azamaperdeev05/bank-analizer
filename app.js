@@ -32,7 +32,7 @@ const weekdayLabels = ['Жс', 'Дс', 'Сс', 'Ср', 'Бс', 'Жм', 'Сб']
 const categoryOptions = [
   'Кіріс', 'Қайтарым', 'Аударым', 'Сатып алу', 'Азық-түлік', 'Тамақ', 'Көлік',
   'Дәріхана', 'Денсаулық', 'Байланыс', 'Үй', 'Киім', 'Білім', 'Сервис',
-  'Демалыс', 'Қарыз', 'Жинақ', 'Комиссия', 'Қолма-қол', 'Басқа'
+  'Демалыс', 'Қарыз', 'Жинақ', 'Комиссия', 'Қолма-қол', 'Электроника', 'Басқа'
 ]
 
 // Unified Bank Profiles Registry
@@ -329,7 +329,15 @@ els.dropZone.addEventListener('drop', event => {
   handleFiles(Array.from(event.dataTransfer.files || []))
 })
 
-els.searchInput.addEventListener('input', render)
+function debounce(fn, ms = 250) {
+  let timer
+  return function(...args) {
+    clearTimeout(timer)
+    timer = setTimeout(() => fn.apply(this, args), ms)
+  }
+}
+
+els.searchInput.addEventListener('input', debounce(render, 250))
 els.typeFilter.addEventListener('change', render)
 els.periodFilter.addEventListener('change', render)
 els.timeGroup.addEventListener('change', render)
@@ -409,7 +417,7 @@ els.transactionTable.addEventListener('change', event => {
       category: categoryControl.value
     }
     saveSettings()
-    render()
+    render({ skipTable: true })
   }
   if (noteControl) {
     settings.transactionMeta[noteControl.dataset.noteKey] = {
@@ -663,16 +671,16 @@ function parseKaspi(text, fileName) {
   ])
   
   const balanceMatch = firstDetailedMatch(text, [
-    /Доступно\s+на\s+(\d{2}[-./]\d{2}[-./]\d{2,4}):\s*(?:\+\s*)?(-?[\d\s.,]*\d)\s*([а-яА-Яa-zA-Z]{1,3}|\W)/,
-    /Card balance\s+((\d\d\.?){3}):\s*(?:\+\s*)?(-?[\d\s.,]*\d)/,
-    /((\d\d\.?){3})ж\.\s*қолжетімді:\s*(?:\+\s*)?(-?[\d\s.,]*\d)/
+    /Доступно\s+на\s+(\d{2}[-./]\d{2}[-./]\d{2,4}):\s*(?:\+\s*)?(-?[\d\s.,]*\d)(?:\s*([а-яА-Яa-zA-Z]{1,3}|\W))?/i,
+    /(?:Card\s+balance|Available\s+(?:on|balance))\s+((?:\d{2}[-./]){2}\d{2,4}|(?:\d\d\.?){3}):\s*(?:\+\s*)?(-?[\d\s.,]*\d)/i,
+    /((?:\d{2}[-./]){2}\d{2,4}|(?:\d\d\.?){3})\s*ж\.?\s*қолжетімді:\s*(?:\+\s*)?(-?[\d\s.,]*\d)/i
   ])
-  const balance = balanceMatch ? parseNumber(balanceMatch[2] || balanceMatch[1] || '0') : 0
+  const balance = balanceMatch ? parseNumber(balanceMatch[2] || '0') : 0
   
   const statementDate = firstOptionalMatch(text, [
-    /Доступно\s+на\s+((\d\d\.?){3}):/,
-    /Card balance\s+((\d\d\.?){3}):/,
-    /((\d\d\.?){3})ж\.\s*қолжетімді:/
+    /Доступно\s+на\s+(\d{2}[-./]\d{2}[-./]\d{2,4}):/i,
+    /(?:Card\s+balance|Available\s+(?:on|balance))\s+((?:\d{2}[-./]){2}\d{2,4}|(?:\d\d\.?){3}):/i,
+    /((?:\d{2}[-./]){2}\d{2,4}|(?:\d\d\.?){3})\s*ж\.?\s*қолжетімді:/i
   ])
   
   const owner = extractOwnerName(text)
@@ -708,9 +716,12 @@ function parseKaspi(text, fileName) {
 }
 
 const KASPI_OPS = [
-  'Зат сатып алу', 'Аударым', 'Толықтыру', 'Қолма-қол', 'Комиссия', 'Қайтарым',
-  'Покупка', 'Перевод', 'Пополнение', 'Снятие', 'Комиссия', 'Возврат',
-  'Purchase', 'Transfer', 'Replenishment', 'Withdrawal', 'Commission', 'Refund'
+  'Өз шоттарыңыздан түскені', 'Өз шотыңыздан түскені',
+  'Өз шоттарыңызға аудару', 'Өз шотыңызға аудару',
+  'Зат сатып алу', 'Ақша алу', 'Аударым', 'Толықтыру', 'Қолма-қол',
+  'Әртүрлі', 'Əртүрлі', 'Комиссия', 'Қайтарым',
+  'Перевод между своими счетами', 'Покупка', 'Перевод', 'Пополнение', 'Снятие', 'Возврат', 'Другое',
+  'Transfer between own accounts', 'Purchase', 'Transfer', 'Replenishment', 'Withdrawal', 'Commission', 'Refund', 'Other'
 ];
 
 function parseTransactionsKaspi(text) {
@@ -720,9 +731,13 @@ function parseTransactionsKaspi(text) {
     const line = lines[index]
     if (!/^\s*\d{2}\.\d{2}\.\d{2}(?:\s+\d{2}:\d{2})?\s*[+-]/.test(line)) continue
 
-    const nextLine = lines[index + 1] || ''
-    const originalAmount = /^\s*\(?\s*[-+]?\s*[\d\s.,]+\s*[A-Z]{3}\s*\)?\s*$/.test(nextLine) ? nextLine.trim() : null
-    if (originalAmount) index++
+    let nextLineIdx = index + 1
+    let originalAmount = null
+    if (nextLineIdx < lines.length && /^\s*\(?\s*[-+]?\s*[\d\s.,]+\s*[A-Z]{3}\s*\)?\s*$/.test(lines[nextLineIdx])) {
+      originalAmount = lines[nextLineIdx].trim()
+      index = nextLineIdx
+      nextLineIdx++
+    }
 
     // Match the date, optional time, sign, amount, currency, and tail
     const match = line.match(/^\s*(\d{2}\.\d{2}\.\d{2})(?:\s+(\d{2}:\d{2}))?\s*([+-])\s*([\d\s.,]+)\s*([^\d\s]+)\s+(.+?)\s*$/)
@@ -730,26 +745,79 @@ function parseTransactionsKaspi(text) {
       const [, dateText, timeText, sign, amountText, currency, tail] = match
       const cleanTail = tail.trim()
       
+      // Lookahead for wrapped lines (e.g. 'түскені', 'аудару', 'алу', or description wrap)
+      let wrappedLine = ''
+      if (nextLineIdx < lines.length) {
+        const candidate = lines[nextLineIdx].trim()
+        const isNextTx = /^\s*\d{2}\.\d{2}\.\d{2}(?:\s+\d{2}:\d{2})?\s*[+-]/.test(candidate)
+        const isJunk = !candidate || /«Kaspi Bank»|анықтамаға қосымша|Күні\s+Сомасы|Бет\s+\d+/i.test(candidate)
+        if (!isNextTx && !isJunk) {
+          wrappedLine = candidate
+        }
+      }
+
       let operationStr = ''
       let descriptionStr = ''
-      
-      // Separate operation from description by checking known prefixes
-      const foundOp = KASPI_OPS.find(op => cleanTail.toLowerCase().startsWith(op.toLowerCase()))
-      if (foundOp && cleanTail.length > foundOp.length && (cleanTail[foundOp.length] === ' ' || cleanTail[foundOp.length] === '\t')) {
-        operationStr = foundOp
-        descriptionStr = cleanTail.substring(foundOp.length).trim()
-      } else if (foundOp && cleanTail.length === foundOp.length) {
-        operationStr = foundOp
-        descriptionStr = ''
+
+      // Handle common Kaspi wrapped operation rows
+      if (wrappedLine && /Өз\s+шот(?:тар)?ыңыздан/i.test(cleanTail) && /^түскені/i.test(wrappedLine)) {
+        operationStr = cleanTail.match(/Өз\s+шот(?:тар)?ыңыздан/i)[0] + ' түскені'
+        const tailRem = cleanTail.replace(/Өз\s+шот(?:тар)?ыңыздан\s*/i, '').trim()
+        const wrapRem = wrappedLine.replace(/^түскені\s*/i, '').trim()
+        descriptionStr = `${tailRem} ${wrapRem}`.trim()
+        index = nextLineIdx
+      } else if (wrappedLine && /Өз\s+шот(?:тар)?ыңызға/i.test(cleanTail) && /^аудару/i.test(wrappedLine)) {
+        operationStr = cleanTail.match(/Өз\s+шот(?:тар)?ыңызға/i)[0] + ' аудару'
+        const tailRem = cleanTail.replace(/Өз\s+шот(?:тар)?ыңызға\s*/i, '').trim()
+        const wrapRem = wrappedLine.replace(/^аудару\s*/i, '').trim()
+        descriptionStr = `${tailRem} ${wrapRem}`.trim()
+        index = nextLineIdx
+      } else if (wrappedLine && /^Ақша\b/i.test(cleanTail) && /^алу/i.test(wrappedLine)) {
+        operationStr = 'Ақша алу'
+        const tailRem = cleanTail.replace(/^Ақша\s*/i, '').trim()
+        const wrapRem = wrappedLine.replace(/^алу\s*/i, '').trim()
+        descriptionStr = `${tailRem} ${wrapRem}`.trim()
+        index = nextLineIdx
+      } else if (wrappedLine && /^Зат\s+сатып\b/i.test(cleanTail) && /^алу/i.test(wrappedLine)) {
+        operationStr = 'Зат сатып алу'
+        const tailRem = cleanTail.replace(/^Зат\s+сатып\s*/i, '').trim()
+        const wrapRem = wrappedLine.replace(/^алу\s*/i, '').trim()
+        descriptionStr = `${tailRem} ${wrapRem}`.trim()
+        index = nextLineIdx
       } else {
-        // Fallback to first word split if no match
-        const spaceIndex = cleanTail.indexOf(' ')
-        if (spaceIndex !== -1) {
-          operationStr = cleanTail.substring(0, spaceIndex).trim()
-          descriptionStr = cleanTail.substring(spaceIndex).trim()
-        } else {
-          operationStr = cleanTail
+        // Normal matching with KASPI_OPS (normalized for Kazakh schwa ә/ə)
+        const normTail = cleanTail.replace(/\u018F/g, 'Ә').replace(/\u0259/g, 'ә').toLowerCase()
+        const foundOp = KASPI_OPS.find(op => {
+          const normOp = op.replace(/\u018F/g, 'Ә').replace(/\u0259/g, 'ә').toLowerCase()
+          return normTail.startsWith(normOp) && (cleanTail.length === op.length || cleanTail[op.length] === ' ' || cleanTail[op.length] === '\t')
+        })
+
+        if (foundOp && cleanTail.length > foundOp.length && (cleanTail[foundOp.length] === ' ' || cleanTail[foundOp.length] === '\t')) {
+          operationStr = foundOp
+          descriptionStr = cleanTail.substring(foundOp.length).trim()
+        } else if (foundOp && cleanTail.length === foundOp.length) {
+          operationStr = foundOp
           descriptionStr = ''
+        } else {
+          // Fallback to first word split if no match
+          const spaceIndex = cleanTail.indexOf(' ')
+          if (spaceIndex !== -1) {
+            operationStr = cleanTail.substring(0, spaceIndex).trim()
+            descriptionStr = cleanTail.substring(spaceIndex).trim()
+          } else {
+            operationStr = cleanTail
+            descriptionStr = ''
+          }
+        }
+
+        // If wrapped line exists and is a description continuation
+        if (wrappedLine && !/^(?:түскені|аудару|алу)$/i.test(wrappedLine)) {
+          const normWrap = wrappedLine.replace(/\u018F/g, 'Ә').replace(/\u0259/g, 'ә').toLowerCase()
+          const startsWithOp = KASPI_OPS.some(op => normWrap.startsWith(op.replace(/\u018F/g, 'Ә').replace(/\u0259/g, 'ә').toLowerCase()))
+          if (!startsWithOp) {
+            descriptionStr = (descriptionStr ? `${descriptionStr} ${wrappedLine}` : wrappedLine).trim()
+            index = nextLineIdx
+          }
         }
       }
 
@@ -1396,8 +1464,37 @@ function extractOwnerName(text) {
     /Account Holder:\s*([^,\n]+)/i,
     /Наименование клиента:\s*([^,\n]+)/i
   ])
-  if (!match) return ''
-  return match.replace(/\s+/g, ' ').trim()
+  if (match) return match.replace(/\s+/g, ' ').trim()
+
+  // Fallback for statements starting on page 2 (e.g. Kaspi Gold where owner precedes 'Карта нөмірі' / 'Шот нөмірі')
+  const kz = '[а-яА-Яa-zA-ZәғқңөұүһіӘҒҚҢӨҰҮҺІ\\u0259\\u018F]'
+  const cardBeforeMatch = text.match(new RegExp(`(?:^|\\n)\\s*(${kz}+(?:\\s+${kz}+)*)\\s+(?:Карта нөмірі|Номер карты|Card number):`, 'i'))
+  const accountBeforeMatch = text.match(new RegExp(`(?:^|\\n)\\s*(${kz}+(?:\\s+${kz}+)*)\\s+(?:Шот нөмірі|Номер счета|Account number):`, 'i'))
+  const invalidName = /үзінді|көшірме|анықтама|қосымша|kaspi|gold|банк|bank|шот|карта|card|account|депозит|deposit|валюта|теңге|тенге|kzt/i
+
+  if (cardBeforeMatch && accountBeforeMatch) {
+    const name1 = cardBeforeMatch[1].trim()
+    const name2 = accountBeforeMatch[1].trim()
+    let resolved = ''
+    if (name1 === name2) {
+      resolved = name1
+    } else if (name1.includes(name2)) {
+      resolved = name1
+    } else if (name2.includes(name1)) {
+      resolved = name2
+    } else {
+      resolved = `${name1} ${name2}`
+    }
+    if (!invalidName.test(resolved)) {
+      return resolved.replace(/\s+/g, ' ').trim()
+    }
+  } else if (cardBeforeMatch && !invalidName.test(cardBeforeMatch[1])) {
+    return cardBeforeMatch[1].replace(/\s+/g, ' ').trim()
+  } else if (accountBeforeMatch && !invalidName.test(accountBeforeMatch[1])) {
+    return accountBeforeMatch[1].replace(/\s+/g, ' ').trim()
+  }
+
+  return ''
 }
 
 // === UTILITIES AND SUPPORTIVE METHODS ===
@@ -1418,7 +1515,7 @@ function normalizeTypeCommon(operation, description, amount) {
   if (/снятие|withdrawals|ақша алу|atm|банкомат/.test(text)) {
     return 'cash'
   }
-  if (/перевод|transfers|аударым/.test(text)) {
+  if (/перевод|transfers|аудар|өз шот/.test(text)) {
     return amount > 0 ? 'income' : 'transfer'
   }
   if (/пополнение|replenishment|толықтыру|зачисление/.test(text)) {
@@ -1430,8 +1527,8 @@ function normalizeTypeCommon(operation, description, amount) {
   return amount > 0 ? 'income' : 'other'
 }
 
-function categorizeCommon({ type, description, amount }) {
-  const text = (description || '').toLowerCase()
+function categorizeCommon({ type, operation = '', description = '', amount }) {
+  const text = `${operation} ${description}`.replace(/\u018F/g, 'ә').replace(/\u0259/g, 'ә').toLowerCase()
   if (type === 'income') {
     return amount > 0 ? 'Кіріс' : 'Қайтарым'
   }
@@ -1444,31 +1541,34 @@ function categorizeCommon({ type, description, amount }) {
   if (/onay|билет|жол ақы|теңгерімді толтыру|taxi|такси|yandex.*go|yandex.*taxi|uber|kolesa|колеса/.test(text)) {
     return 'Көлік'
   }
-  if (/apteka|аптека|apotheke|omega|pharma|дәріхана/.test(text)) {
+  if (/apteka|аптека|apotheke|omega|pharma|дәріхана|биосфера/.test(text)) {
     return 'Дәріхана'
   }
   if (/clinic|клиник|мед|стомат|dent|optika|оптика|здоровь/.test(text)) {
     return 'Денсаулық'
   }
+  if (/мечта|mechta|sulpak|technodom|технодом/.test(text)) {
+    return 'Электроника'
+  }
   if (/magnum|магазин|маркет|мини|minimarket|cash&carry|южный|алатау|small|galmart|arbuz|корзина|супермаркет/.test(text)) {
     return 'Азық-түлік'
   }
-  if (/maki|belissimo|food|cafe|coffee|кофе|restaurant|restoran|burger|kfc|doner|pizza|пицца|bauyrsaq|бауырсақ|fast\s*food/.test(text)) {
+  if (/maki|belissimo|food|cafe|coffee|кофе|restaurant|restoran|burger|kfc|doner|донер|pizza|пицца|bauyrsaq|бауырсақ|fast\s*food|тағам|тагам|кафе|шашлык/.test(text)) {
     return 'Тамақ'
   }
   if (/activ|kcell|tele2|beeline|internet|интернет|байланыс/.test(text)) {
     return 'Байланыс'
   }
-  if (/ticket|freedom media|tilda|netflix|spotify|apple|google|yandex|яндекс/.test(text)) {
+  if (/ticket|freedom media|tilda|netflix|spotify|apple|google|yandex|яндекс|claude\.ai|openai/.test(text)) {
     return 'Сервис'
   }
   if (/кино|cinema|театр|ойын|playstation|steam/.test(text)) {
     return 'Демалыс'
   }
-  if (/school|курс|университет|оқу|education|book|кітап/.test(text)) {
+  if (/school|курс|университет|колледж|жоо|оқу|education|book|кітап/.test(text)) {
     return 'Білім'
   }
-  if (/zara|lc waikiki|waikiki|киім|clothes|sulpak|mechta|technodom/.test(text)) {
+  if (/zara|lc waikiki|waikiki|киім|clothes/.test(text)) {
     return 'Киім'
   }
   if (type === 'cash') {
@@ -1512,7 +1612,9 @@ function markTransitTransactions(transactions) {
 }
 
 function isInternalTransfer(transaction) {
-  return transaction.isTransit || /перевод между своими/i.test(transaction.description)
+  if (transaction.isTransit) return true
+  const textToTest = `${transaction.operation || ''} ${transaction.description || ''}`
+  return /өз\s*шот|депозит|deposit|перевод между своими|between own accounts/i.test(textToTest)
 }
 
 function firstMatch(text, regexes) {
@@ -1546,21 +1648,40 @@ function parseNumber(str) {
 }
 
 function parseDate(dateStr, timeStr = '') {
-  const parts = dateStr.split(/[-./]/)
-  if (parts.length < 3) return new Date()
-  let day = Number(parts[0])
-  let month = Number(parts[1]) - 1
-  let year = Number(parts[2])
-  if (year < 100) year += 2000 // handle short years
+  if (!dateStr) return new Date()
+  let day, month, year
+  let hrs = 0, mins = 0, secs = 0
+  const trimmed = dateStr.trim()
+  const isoMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/)
+  if (isoMatch) {
+    year = Number(isoMatch[1])
+    month = Number(isoMatch[2]) - 1
+    day = Number(isoMatch[3])
+    if (isoMatch[4] !== undefined) hrs = Number(isoMatch[4]) || 0
+    if (isoMatch[5] !== undefined) mins = Number(isoMatch[5]) || 0
+    if (isoMatch[6] !== undefined) secs = Number(isoMatch[6]) || 0
+  } else {
+    const parts = trimmed.split(/[-./]/)
+    if (parts.length < 3) return new Date()
+    if (parts[0].length === 4) {
+      year = Number(parts[0])
+      month = Number(parts[1]) - 1
+      day = Number(parts[2])
+    } else {
+      day = Number(parts[0])
+      month = Number(parts[1]) - 1
+      year = Number(parts[2])
+      if (year < 100) year += 2000 // handle short years
+    }
+  }
 
   if (timeStr) {
     const timeParts = timeStr.split(':')
-    const hrs = Number(timeParts[0]) || 0
-    const mins = Number(timeParts[1]) || 0
-    const secs = Number(timeParts[2]) || 0
-    return new Date(year, month, day, hrs, mins, secs)
+    hrs = Number(timeParts[0]) || 0
+    mins = Number(timeParts[1]) || 0
+    secs = Number(timeParts[2]) || 0
   }
-  return new Date(year, month, day)
+  return new Date(year, month, day, hrs, mins, secs)
 }
 
 // mask account number when privacy mode enabled
@@ -1943,7 +2064,7 @@ function getTransactionNote(transaction) {
 
 // === RENDERERS ===
 
-function render() {
+function render(options = {}) {
   if (els.appShell) {
     els.appShell.classList.toggle('has-no-transactions', state.transactions.length === 0)
   }
@@ -2006,7 +2127,9 @@ function render() {
   renderRecurringList(state.filtered)
   renderUnusualDays(state.filtered)
   renderWeekdayList(state.filtered)
-  renderTable(state.filtered)
+  if (!options || !options.skipTable) {
+    renderTable(state.filtered)
+  }
   
   drawDailyChart(els.dailyChart, timeStats.items)
 }
@@ -2108,7 +2231,7 @@ function renderIncomePeopleList(transactions) {
 
 function renderPeopleList(transactions) {
   els.peopleList.innerHTML = ''
-  const transfers = transactions.filter(t => t.type === 'transfer' || t.type === 'income')
+  const transfers = transactions.filter(t => (t.type === 'transfer' || t.type === 'income') && !isInternalTransfer(t))
   const byPerson = {}
   
   for (const t of transfers) {
@@ -2158,10 +2281,14 @@ function renderPeopleList(transactions) {
 }
 
 function extractPersonName(desc) {
-  const match = desc.match(/(?:аударым|перевод)\s+([^.\n]+)/i) || 
-    desc.match(/^(?:т\.|қ\.|д\.)\s+([^.\n]+)/i) ||
-    desc.match(/^([а-яА-Яa-zA-Z\s]{4,}\s[а-яА-Яa-zA-Z\s]{1}\.)/i)
-  return match ? match[1].trim() : null
+  if (!desc || /^(?:ип|тоо|too)\s/i.test(desc)) return null
+  const cleaned = desc.replace(/^(?:аударым|перевод|т\.|қ\.|д\.)\s+(?:от\s+)?/i, '').trim()
+  const kz = '[а-яА-Яa-zA-ZәғқңөұүһіӘҒҚҢӨҰҮҺІ\\u0259\\u018F]'
+  const nameRegex = new RegExp(`^(${kz}{2,}(?:\\s+${kz}+)*(?:\\s+${kz}\\.)+)`, 'i')
+  const match = cleaned.match(nameRegex)
+  if (match) return match[1].trim()
+  const fallback = desc.match(/(?:аударым|перевод)\s+(?:от\s+)?([^.\n]+)/i) || desc.match(/^(?:т\.|қ\.|д\.)\s+([^.\n]+)/i)
+  return fallback ? fallback[1].trim() : null
 }
 
 function renderPeriodList(timeStats) {
@@ -2461,7 +2588,7 @@ function renderFinanceRule(transactions, monthContext) {
     const cat = getTransactionCategory(t)
     if (/Азық-түлік|Көлік|Дәріхана|Денсаулық|Үй|Комиссия/.test(cat)) {
       spentByRule.needs += Math.abs(t.amount)
-    } else if (/Тамақ|Киім|Сервис|Демалыс|Білім/.test(cat)) {
+    } else if (/Тамақ|Киім|Сервис|Демалыс|Білім|Электроника/.test(cat)) {
       spentByRule.wants += Math.abs(t.amount)
     } else {
       spentByRule.savings += Math.abs(t.amount)
@@ -2596,19 +2723,42 @@ function renderUnusualDays(transactions) {
 function renderWeekdayList(transactions) {
   els.weekdayList.innerHTML = ''
   const spendings = transactions.filter(t => t.amount < 0 && !isInternalTransfer(t))
-  const byDay = Array.from({ length: 7 }, () => ({ sum: 0, count: 0 }))
-  
+  if (spendings.length === 0) {
+    els.weekdayList.innerHTML = '<li class="list-row"><span class="list-title">Шығыстар табылмады</span></li>'
+    return
+  }
+
+  // Count distinct occurrences of each weekday across the statement period
+  const allDates = transactions.map(t => t.date.getTime())
+  const minTime = Math.min(...allDates)
+  const maxTime = Math.max(...allDates)
+  const startDate = new Date(minTime)
+  startDate.setHours(0, 0, 0, 0)
+  const endDate = new Date(maxTime)
+  endDate.setHours(0, 0, 0, 0)
+
+  const weekdayOccurrences = Array(7).fill(0)
+  const cur = new Date(startDate)
+  while (cur <= endDate) {
+    weekdayOccurrences[cur.getDay()]++
+    cur.setDate(cur.getDate() + 1)
+  }
+
+  const byDay = Array.from({ length: 7 }, () => ({ sum: 0, distinctDays: new Set() }))
   for (const t of spendings) {
     const day = t.date.getDay()
     byDay[day].sum += Math.abs(t.amount)
-    byDay[day].count++
+    byDay[day].distinctDays.add(toInputDate(t.date))
   }
 
-  const items = byDay.map((s, idx) => ({
-    label: weekdayLabels[idx],
-    average: s.count > 0 ? s.sum / s.count : 0,
-    sum: s.sum
-  })).sort((a, b) => b.average - a.average)
+  const items = byDay.map((s, idx) => {
+    const daysCount = weekdayOccurrences[idx] || s.distinctDays.size || 1
+    return {
+      label: weekdayLabels[idx],
+      average: s.sum > 0 ? s.sum / daysCount : 0,
+      sum: s.sum
+    }
+  }).sort((a, b) => b.average - a.average)
 
   for (const item of items) {
     const li = document.createElement('li')
@@ -2667,10 +2817,12 @@ function drawDailyChart(canvas, items) {
   const w = canvas.width - paddingLeft - paddingRight
   const h = canvas.height - paddingTop - paddingBottom
 
-  const maxVal = Math.max(...items.flatMap(i => [i.income, i.expense, Math.abs(i.net)]), 10000)
+  const minVal = Math.min(0, ...items.map(i => i.net))
+  const maxVal = Math.max(...items.flatMap(i => [i.income, i.expense, i.net]), 10000)
+  const range = (maxVal - minVal) || 1
   
-  const getX = index => paddingLeft + (index / (items.length - 1 || 1)) * w
-  const getY = val => paddingTop + h - (val / maxVal) * h
+  const getX = index => items.length === 1 ? paddingLeft + w / 2 : paddingLeft + (index / (items.length - 1)) * w
+  const getY = val => paddingTop + ((maxVal - val) / range) * h
 
   // Helper lines (grid)
   ctx.strokeStyle = 'rgba(255,255,255,0.03)'
@@ -2684,27 +2836,48 @@ function drawDailyChart(canvas, items) {
     
     // Labels
     ctx.fillStyle = '#9CA3AF'
-    ctx.font = '10px Roboto'
+    ctx.font = '10px Roboto, sans-serif'
     ctx.textAlign = 'right'
-    const labelVal = Math.round(maxVal - (i / 4) * maxVal)
+    const labelVal = Math.round(maxVal - (i / 4) * range)
     ctx.fillText(labelVal.toLocaleString() + ' ₸', paddingLeft - 10, y + 3)
   }
 
-  // Draw chart lines
-  drawChartLine(ctx, items, items.map(i => i.income), '#10B981')
-  const pColor = state.activeBank ? BANKS[state.activeBank].typeColors.purchase : '#6366F1'
-  drawChartLine(ctx, items, items.map(i => i.expense), pColor)
+  // Draw zero line if minVal < 0
+  if (minVal < 0) {
+    const zeroY = getY(0)
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)'
+    ctx.lineWidth = 1
+    ctx.setLineDash([4, 4])
+    ctx.beginPath()
+    ctx.moveTo(paddingLeft, zeroY)
+    ctx.lineTo(canvas.width - paddingRight, zeroY)
+    ctx.stroke()
+    ctx.setLineDash([])
+  }
+
+  // Draw chart lines: Income, Expense, and Net
+  drawChartLine(ctx, items, items.map(i => i.income), '#10B981', minVal, maxVal)
+  const pColor = state.activeBank ? BANKS[state.activeBank].typeColors.purchase : '#EF4444'
+  drawChartLine(ctx, items, items.map(i => i.expense), pColor, minVal, maxVal)
+  drawChartLine(ctx, items, items.map(i => i.net), '#3B82F6', minVal, maxVal)
   
   // Date Labels (X Axis)
   ctx.fillStyle = '#9CA3AF'
   ctx.textAlign = 'center'
-  const step = Math.ceil(items.length / 5)
-  for (let i = 0; i < items.length; i += step) {
-    ctx.fillText(items[i].label, getX(i), canvas.height - 15)
+  if (items.length === 1) {
+    ctx.fillText(items[0].label, paddingLeft + w / 2, canvas.height - 15)
+  } else {
+    const step = Math.ceil(items.length / 5)
+    for (let i = 0; i < items.length; i += step) {
+      ctx.fillText(items[i].label, getX(i), canvas.height - 15)
+    }
+    if ((items.length - 1) % step !== 0) {
+      ctx.fillText(items[items.length - 1].label, getX(items.length - 1), canvas.height - 15)
+    }
   }
 }
 
-function drawChartLine(ctx, items, vals, color) {
+function drawChartLine(ctx, items, vals, color, minVal, maxVal) {
   const canvas = ctx.canvas
   const paddingLeft = 60
   const paddingRight = 40
@@ -2713,10 +2886,23 @@ function drawChartLine(ctx, items, vals, color) {
   
   const w = canvas.width - paddingLeft - paddingRight
   const h = canvas.height - paddingTop - paddingBottom
-  const maxVal = Math.max(...items.flatMap(i => [i.income, i.expense, Math.abs(i.net)]), 10000)
+  const range = (maxVal - minVal) || 1
   
-  const getX = index => paddingLeft + (index / (items.length - 1 || 1)) * w
-  const getY = val => paddingTop + h - (val / maxVal) * h
+  const getX = index => items.length === 1 ? paddingLeft + w / 2 : paddingLeft + (index / (items.length - 1)) * w
+  const getY = val => paddingTop + ((maxVal - val) / range) * h
+
+  if (items.length === 1) {
+    const x = getX(0)
+    const y = getY(vals[0])
+    ctx.fillStyle = color
+    ctx.beginPath()
+    ctx.arc(x, y, 6, 0, Math.PI * 2)
+    ctx.fill()
+    ctx.strokeStyle = 'rgba(255,255,255,0.7)'
+    ctx.lineWidth = 1.5
+    ctx.stroke()
+    return
+  }
 
   ctx.strokeStyle = color
   ctx.lineWidth = 2.5
@@ -2852,7 +3038,7 @@ function exportWord(transactions) {
     const category = getTransactionCategory(t)
     const note = getTransactionNote(t)
     const amtClass = t.amount > 0 ? 'positive' : 'negative'
-    const amtText = `${t.amount > 0 ? '+' : ''}${formatMoney(t.amount)} ${t.currency}`
+    const amtText = `${t.amount > 0 ? '+' : ''}${formatMoney(t.amount)}`
     
     html += `
       <tr>
@@ -2896,7 +3082,7 @@ function exportPdf(transactions) {
       <td>${typeLabels[t.type] || t.type}</td>
       <td>${t.description}</td>
       <td style="color: ${t.amount > 0 ? '#059669' : '#dc2626'}; font-weight: bold;">
-        ${t.amount > 0 ? '+' : ''}${formatMoney(t.amount)} ${t.currency}
+        ${t.amount > 0 ? '+' : ''}${formatMoney(t.amount)}
       </td>
       <td>${getTransactionCategory(t)}</td>
       <td>${getTransactionNote(t) || '-'}</td>
@@ -2904,6 +3090,10 @@ function exportPdf(transactions) {
   `).join('')
 
   const printWindow = window.open('', '_blank')
+  if (!printWindow) {
+    showToast('Браузер басып шығару терезесін бұғаттады. Рұқсат беріңіз.', 'error')
+    return
+  }
   printWindow.document.write(`
     <!DOCTYPE html>
     <html>
@@ -2935,9 +3125,9 @@ function exportPdf(transactions) {
           <h1>Қаржылық транзакциялар есебі / Финансовый отчет</h1>
           <p>Банк: <b>${state.activeBank ? BANKS[state.activeBank].name : 'Unified'}</b> · Шот/IBAN: <b>${state.account ? state.account.id : '-'}</b></p>
           <div class="stats-grid">
-            <div class="stats-card">Кіріс (Доходы): <strong class="positive">+${formatMoney(stats.income)} ₸</strong></div>
-            <div class="stats-card">Шығыс (Расходы): <strong class="negative">-${formatMoney(stats.expense)} ₸</strong></div>
-            <div class="stats-card">Аударым (Переводы): <strong>${formatMoney(stats.transfers)} ₸</strong></div>
+            <div class="stats-card">Кіріс (Доходы): <strong class="positive">+${formatMoney(stats.income)}</strong></div>
+            <div class="stats-card">Шығыс (Расходы): <strong class="negative">-${formatMoney(stats.expense)}</strong></div>
+            <div class="stats-card">Аударым (Переводы): <strong>${formatMoney(Math.abs(stats.byType.transfer?.sum || 0))}</strong></div>
           </div>
         </div>
         <table>
